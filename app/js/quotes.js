@@ -1,6 +1,13 @@
 /*
- * Câu nói hay: tục ngữ, ca dao và danh ngôn, đổi mỗi ngày (không cần mạng).
- *   Quotes.today(date) -> {text, by}      Quotes.at(i) -> {text, by}
+ * Câu nói hay: tục ngữ, ca dao và danh ngôn, mỗi lần hiện một câu khác.
+ *
+ * Có sẵn ~130 câu chọn lọc (chạy cả khi mất mạng). Mỗi ngày tải thêm:
+ *   - 50 danh ngôn mới của ZenQuotes (zenquotes.io, miễn phí, ghi nguồn), dịch sang tiếng Việt;
+ *   - ~400 câu tục ngữ của trang "Tục ngữ Việt Nam" trên Wikiquote tiếng Việt.
+ *
+ *   Quotes.load(cb)        tải nguồn trực tuyến (cache theo ngày), cb() khi xong
+ *   Quotes.next()          câu kế tiếp: xen kẽ danh ngôn mới, câu chọn lọc và tục ngữ -> {text, by}
+ *   Quotes.today(date)     một câu cố định cho cả ngày      Quotes.at(i) -> {text, by}
  */
 (function (root) {
   'use strict';
@@ -153,5 +160,105 @@
     return at(day * 7 + d.getFullYear());
   }
 
-  root.Quotes = { today: today, at: at, count: Q.length };
+  // ---- online, refreshed daily -------------------------------------------------------------------
+
+  var CACHE = 'quotes.live';
+  var live = { zen: [], proverbs: [] }, order = null, cursor = 0;
+
+  /** Wikiquote wikitext → proverbs: one-line bullets, no variants ("a/b", "(…)"), links or headings. */
+  function parseProverbs(wikitext) {
+    var out = [];
+    wikitext.split('\n').forEach(function (line) {
+      var m = /^\*\s*([^*:\[{].*)$/.exec(line);
+      if (!m) return;
+      var t = m[1].replace(/'{2,}/g, '').trim();
+      if (/[\/()\[\]{}<>|=]/.test(t) || t.length < 28 || t.length > 110) return;   // short ones are mostly idioms
+      t = t.charAt(0).toUpperCase() + t.slice(1);
+      if (!/[.!?…]$/.test(t)) t += '.';
+      out.push({ text: t, by: 'Tục ngữ' });
+    });
+    return out;
+  }
+
+  /** A shuffle that stays put for the whole day (same order after a reload), different tomorrow. */
+  function shuffled(list, seed) {
+    var a = list.slice(), x = seed;
+    for (var i = a.length - 1; i > 0; i--) {
+      x = (x * 1103515245 + 12345) % 2147483648;
+      var j = x % (i + 1), t = a[i];
+      a[i] = a[j];
+      a[j] = t;
+    }
+    return a;
+  }
+
+  function dayKey(d) { return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
+
+  /** Today's new sayings, the curated ones and the proverbs take turns, each source a third of the time. */
+  function buildOrder() {
+    var seed = dayKey(new Date());
+    var lists = [shuffled(live.zen, seed), shuffled(Q.map(function (q) { return { text: q[0], by: q[1] }; }), seed + 1),
+      shuffled(live.proverbs, seed + 2)].filter(function (l) { return l.length; });
+    order = [];
+    var n = Math.max.apply(null, lists.map(function (l) { return l.length; }));
+    for (var i = 0; i < n; i++) lists.forEach(function (l) { order.push(l[i % l.length]); });   // short lists come round again
+    cursor = Math.floor(Date.now() / 60000) % order.length;   // not the same first saying on every start
+  }
+
+  function next() {
+    if (!order) buildOrder();
+    var q = order[cursor % order.length];
+    cursor++;
+    return q;
+  }
+
+  function zenQuotes(cb) {
+    Platform.getJSON('https://zenquotes.io/api/quotes', function (err, data) {
+      var list = (!err && data && data.length ? data : []).filter(function (q) {
+        return q.q && q.a && q.q.length < 160 && !/zenquotes/i.test(q.a) && !(root.History && History.GRIM.test(q.q));
+      }).slice(0, 50);
+      if (!list.length || !root.History) return cb([]);
+      // Translate in chunks: one long request would pass the URL length limit.
+      var out = [], chunks = [];
+      for (var i = 0; i < list.length; i += 10) chunks.push(list.slice(i, i + 10));
+      (function step(k) {
+        if (k >= chunks.length) return cb(out);
+        History.translate(chunks[k].map(function (q) { return q.q; }), function (vi) {
+          chunks[k].forEach(function (q, j) {
+            if (vi[j] && vi[j] !== q.q) out.push({ text: vi[j], by: (q.a === 'Unknown' ? 'Khuyết danh' : q.a) + ' · ZenQuotes' });   // untranslated: skip
+          });
+          step(k + 1);
+        });
+      })(0);
+    }, 15000);
+  }
+
+  function proverbs(cb) {
+    Platform.getJSON('https://vi.wikiquote.org/w/api.php?action=parse&prop=wikitext&format=json&formatversion=2' +
+      '&origin=*&page=' + encodeURIComponent('Tục ngữ Việt Nam'), function (err, data) {
+      cb(!err && data && data.parse ? parseProverbs(data.parse.wikitext || '') : []);
+    }, 15000);
+  }
+
+  function load(cb) {
+    cb = cb || function () {};
+    var today = dayKey(new Date()), cached = Platform.store.get(CACHE, null);
+    if (cached && (cached.zen.length || cached.proverbs.length)) { live = cached; order = null; }
+    if (cached && cached.day === today) return cb();
+    var got = { day: today, zen: [], proverbs: [] }, left = 2;
+    function done() {
+      if (--left) return;
+      if (!got.zen.length && cached) got.zen = cached.zen;            // offline today: keep yesterday's
+      if (!got.proverbs.length && cached) got.proverbs = cached.proverbs;
+      live = got;
+      order = null;
+      if (got.zen.length || got.proverbs.length) Platform.store.set(CACHE, got);
+      cb();
+    }
+    zenQuotes(function (l) { got.zen = l; done(); });
+    proverbs(function (l) { got.proverbs = l; done(); });
+  }
+
+  root.Quotes = { today: today, at: at, count: Q.length, next: next, load: load, parseProverbs: parseProverbs,
+    size: function () { if (!order) buildOrder(); return order.length; } };
 })(this);

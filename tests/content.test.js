@@ -43,3 +43,31 @@ test('history: the family filter catches English and Vietnamese wording', () => 
   ['Two shootings in Texas', 'A bomb attack', 'Vụ xả súng', 'Máy bay gặp tai nạn'].forEach((t) => assert.ok(History.GRIM.test(t), t));
   ['Apollo 11 lands on the Moon', 'Khánh thành cầu Long Biên'].forEach((t) => assert.ok(!History.GRIM.test(t), t));
 });
+
+test('quotes: Wikiquote proverbs are cleaned, variants and links dropped', () => {
+  const wikitext = [
+    '{{Mục lục ngang}}',
+    "'''Tục ngữ''' là những câu nói dân gian…",
+    '== A ==',
+    '* ăn quả nhớ kẻ trồng cây',
+    '* Ai cũng/chả muốn phấn dồi mặt, chứ/chớ ai muốn phấn dồi gót chân',
+    '*Nâng như nâng trứng(, hứng như hứng hoa)',
+    '* Ăn cá bỏ lờ',
+    '* [[Ca dao Việt Nam về tình yêu]]',
+    '*:Ai ơi bưng bát cơm đầy,',
+    '* Một cây làm chẳng nên non, ba cây chụm lại nên hòn núi cao!',
+    '* uống nước nhớ nguồn, ăn quả nhớ kẻ trồng cây'
+  ].join('\n');
+  assert.deepEqual(Quotes.parseProverbs(wikitext), [
+    { text: 'Một cây làm chẳng nên non, ba cây chụm lại nên hòn núi cao!', by: 'Tục ngữ' },
+    { text: 'Uống nước nhớ nguồn, ăn quả nhớ kẻ trồng cây.', by: 'Tục ngữ' }
+  ]);
+});
+
+test('quotes: next() gives a different saying each time and covers the whole list', () => {
+  const seen = new Set();
+  for (let i = 0; i < Quotes.size(); i++) seen.add(Quotes.next().text);
+  assert.equal(seen.size, Quotes.count);   // offline: the curated list, every one of them
+  const a = Quotes.next(), b = Quotes.next();
+  assert.notEqual(a.text, b.text);
+});

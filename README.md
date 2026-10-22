@@ -18,7 +18,9 @@ thay chỗ launcher, còn phần "debloat" làm bằng Cài đặt và DNS (xem 
     kênh nằm trong `youtubeChannels` của [app/config.js](app/config.js). Dùng RSS công khai, không cần API key.
   - **Tin mới:** ô đầu hàng thứ hai. Mở ra là 40 tin mới nhất từ VnExpress, Thanh Niên, Dân Trí, kèm ảnh và
     tóm tắt; ▲▼ để chọn, Back để đóng.
-  - **Hôm nay:** xoay vòng *Ngày này năm xưa* (Wikipedia, cả thế giới) và *Câu nói hay*.
+  - **Hôm nay:** xoay vòng *Ngày này năm xưa* (Wikipedia, cả thế giới), *Tin mới* và *Câu nói hay*. Mỗi lượt
+    là một câu nói khác, luân phiên ba nguồn: 50 danh ngôn mới mỗi ngày của [ZenQuotes](https://zenquotes.io)
+    (dịch sang tiếng Việt), ~130 câu chọn sẵn, và tục ngữ của Wikiquote tiếng Việt. Màn hình chờ đổi câu mỗi phút.
 - **Góc trái:**
   - Lời chào và đồng hồ.
   - Ngày dương lịch và âm lịch.

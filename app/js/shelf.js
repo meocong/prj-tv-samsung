@@ -92,11 +92,12 @@
     cb(null);
   }
 
-  /** Open a card: a YouTube video plays straight away in the YouTube app (or the app opens, if it refuses). */
+  /**
+   * Open a card: the video plays straight away, whether YouTube was closed or already open. The payload is what a
+   * phone sends when casting (DIAL "v=ID&t=0"); Samsung hands it to YouTube as app-control data. Checked on the TV.
+   */
   function open(card, app, onError, watchIds) {
-    if (card.kind === 'youtube') {
-      Platform.launchWithPayload(app.id, '#watch?v=' + card.id + '&launch=launcher', onError, watchIds);
-    }
+    if (card.kind === 'youtube') Platform.launchWithPayload(app.id, 'v=' + card.id + '&t=0', onError, watchIds);
   }
 
   root.Shelf = { content: content, open: open, isYouTube: isYouTube };

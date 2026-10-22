@@ -930,12 +930,13 @@
     var now = new Date();
     History.load(now, function (items) { history = items; buildToday(); });
     News.load(function (items) { news = items; buildToday(); });
+    Quotes.load();
     buildToday();
   }
 
   function buildToday() {
-    var q = Quotes.today();
-    var list = [{ label: 'Câu nói hay', text: '“' + q.text + '”', meta: q.by }];
+    // Sayings are drawn when shown, so each round brings a new one.
+    var list = [{ label: 'Câu nói hay', quote: true }, { label: 'Câu nói hay', quote: true }, { label: 'Câu nói hay', quote: true }];
     var events = history.filter(function (h) { return h.kind === 'event'; });
     var births = history.filter(function (h) { return h.kind === 'birth'; });
     // A different event each time the block comes round, and now and then someone born today.
@@ -954,7 +955,6 @@
       list.filter(function (x) { return x.label.indexOf('Ngày này') === 0 || x.label.indexOf('Sinh') === 0; }),
       list.filter(function (x) { return x.label.indexOf('Tin') === 0; })];
     for (var k = 0; k < 6; k++) groups.forEach(function (g) { if (g[k]) todayItems.push(g[k]); });
-    $('frQuote').textContent = '“' + q.text + '” — ' + q.by;
     if (!$('today').classList.contains('shown')) showToday();
   }
 
@@ -962,6 +962,7 @@
     var el = $('today');
     if (!settings.showToday || !todayItems.length) { el.classList.remove('shown'); return; }
     var it = todayItems[todayIndex % todayItems.length];
+    if (it.quote) { var q = Quotes.next(); it = { label: it.label, text: '“' + q.text + '”', meta: q.by }; }
     el.classList.remove('shown');
     setTimeout(function () {
       el.children[0].textContent = it.label;
@@ -977,6 +978,13 @@
     showToday();
   }, 15000);
   setInterval(refreshToday, 30 * 60000);
+
+  /** The screensaver's saying changes every minute too. */
+  function nextFrameQuote() {
+    var q = Quotes.next();
+    $('frQuote').textContent = '“' + q.text + '” — ' + q.by;
+  }
+  setInterval(function () { if (zone === 'frame') nextFrameQuote(); }, 60000);
 
   // ---- wallpaper -------------------------------------------------------------------------------
 
@@ -1135,6 +1143,7 @@
     if (editing) finishEdit(false);
     zoneBeforeFrame = zone === 'top' ? 'top' : 'grid';
     closePanels();
+    nextFrameQuote();
     setZone('frame');
     $('frame').classList.remove('hidden');
     Platform.setTvScreenSaver(false);

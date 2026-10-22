@@ -13,7 +13,8 @@ import urllib.request
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "app")
 ALLOWED = ("www.bing.com", "en.wikipedia.org", "vi.wikipedia.org", "api.open-meteo.com", "air-quality-api.open-meteo.com",
            "api.wikimedia.org", "translate.googleapis.com", "www.youtube.com", "www.googleapis.com",
-           "vnexpress.net", "thanhnien.vn", "dantri.com.vn", "tuoitre.vn")
+           "vnexpress.net", "thanhnien.vn", "dantri.com.vn", "tuoitre.vn",
+           "zenquotes.io", "vi.wikiquote.org")
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):

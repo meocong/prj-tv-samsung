@@ -101,5 +101,5 @@
     }, 15000);
   }
 
-  root.History = { load: load, parse: parse, clean: clean, GRIM: GRIM };
+  root.History = { load: load, parse: parse, clean: clean, translate: translate, GRIM: GRIM };
 })(this);
