@@ -33,8 +33,14 @@ thay chỗ launcher, còn phần "debloat" làm bằng Cài đặt và DNS (xem 
   28 sao, nạp âm, giờ hoàng đạo, giờ xuất hành Lý Thuần Phong, hướng xuất hành, tuổi xung, Bành Tổ, ngày
   Tam nương/Nguyệt kỵ/Dương công, và ngày này năm xưa.
 - **Hình nền:**
-  - Ảnh Bing đẹp mỗi ngày, tự đổi mỗi 5 phút (chỉnh được 5/10/30 phút hoặc mỗi ngày), và đổi ngay khi thoát app
-    hay tắt màn hình chờ. Phím xanh lá: đổi ngay.
+  - Ảnh Bing của 13 nước (mỗi nước có ảnh riêng mỗi ngày). Kho tự lớn dần tới 120 ảnh: mỗi lần làm mới thêm ảnh
+    mới, ảnh cũ nhất rơi ra.
+  - Tự đổi **mỗi giờ** (chỉnh được 5/15/30 phút, 3 giờ, mỗi ngày). Mốc lần đổi gần nhất được lưu lại: tắt TV một
+    đêm, bật lên là có ảnh mới; chưa tới hạn thì vẫn ảnh cũ. Phím xanh lá: đổi ngay.
+  - **Thư viện hình nền** (Cài đặt → Màn hình chính → Chọn hình nền): lưới ảnh Bing và ảnh gia đình; OK →
+    *Dùng ảnh này* (đến hạn vẫn tự đổi) hoặc *Giữ cố định* (không đổi nữa, chọn *Bỏ cố định* để tự đổi lại).
+  - Mở app là có ảnh ngay: ảnh đang dùng và ảnh kế tiếp được lưu trên TV (IndexedDB, tối đa 30 ảnh ≈ 12 MB, đầy
+    thì xóa ảnh lâu không dùng nhất), kèm một bản 64×36 vẽ từ khung hình đầu tiên.
   - Hoặc *Ảnh gia đình*, *Kết hợp*, *Bầu trời theo giờ*, nền đen.
 - **Màn hình chờ** sau 3 phút không bấm gì:
   - Ảnh chuyển mờ dần, xen ảnh gia đình.

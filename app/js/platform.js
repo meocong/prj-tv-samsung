@@ -113,12 +113,33 @@
     try { tizen.application.getCurrentApplication().exit(); } catch (e) { /* preview */ }
   }
 
+  /**
+   * Samsung's webapis.js costs ~0.4 s to load on this TV and is only needed for the TV screensaver switch and the
+   * model name, so it is fetched after the home screen is up instead of from index.html.
+   */
+  var webapisWaiting = null;
+  function withWebapis(cb) {
+    if (root.webapis || !isTV) return cb(root.webapis || null);
+    if (webapisWaiting) return webapisWaiting.push(cb);
+    webapisWaiting = [cb];
+    var el = document.createElement('script');
+    el.src = '$WEBAPIS/webapis/webapis.js';
+    el.onload = el.onerror = function () {
+      var w = webapisWaiting;
+      webapisWaiting = null;
+      w.forEach(function (f) { f(root.webapis || null); });
+    };
+    document.body.appendChild(el);
+  }
+
   /** Keep the TV's own screensaver away while our photo frame is showing (and allow it otherwise). */
   function setTvScreenSaver(allow) {
-    try {
-      var s = webapis.appcommon.AppCommonScreenSaverState;
-      webapis.appcommon.setScreenSaver(allow ? s.SCREEN_SAVER_ON : s.SCREEN_SAVER_OFF, function () {}, function () {});
-    } catch (e) { /* no webapis */ }
+    withWebapis(function (w) {
+      try {
+        var s = w.appcommon.AppCommonScreenSaverState;
+        w.appcommon.setScreenSaver(allow ? s.SCREEN_SAVER_ON : s.SCREEN_SAVER_OFF, function () {}, function () {});
+      } catch (e) { /* no webapis */ }
+    });
   }
 
   /** HDMI and other sources: [{label, connected, source}] — source is the tizen object for setInput. */
@@ -182,9 +203,13 @@
 
   /** {model, firmware, network, ip, storage} — whatever the TV is willing to tell. */
   function deviceInfo(cb) {
+    withWebapis(function (w) { deviceInfoWith(w, cb); });
+  }
+
+  function deviceInfoWith(w, cb) {
     var d = {};
-    try { d.model = webapis.productinfo.getRealModel() || webapis.productinfo.getModel(); } catch (e) { /* no webapis */ }
-    try { d.firmware = webapis.productinfo.getFirmware(); } catch (e) { /* no webapis */ }
+    try { d.model = w.productinfo.getRealModel() || w.productinfo.getModel(); } catch (e) { /* no webapis */ }
+    try { d.firmware = w.productinfo.getFirmware(); } catch (e) { /* no webapis */ }
     if (!isTV) { d.model = 'UA50TU8500KXXV (xem thử)'; }
     network(function (n) {
       d.network = n.type === 'wifi' ? 'Wi-Fi · ' + (n.ssid || '') : n.type === 'ethernet' ? 'Cáp mạng' : 'Chưa có mạng';

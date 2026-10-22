@@ -1,6 +1,7 @@
 /*
- * Ảnh nền hằng ngày: Bing (ảnh trong ngày + 15 ngày trước) và Wikimedia (ảnh nổi bật mỗi ngày).
- * Danh sách ảnh được cache trong localStorage để màn hình chờ vẫn có ảnh khi mất mạng.
+ * Ảnh nền hằng ngày: Bing (ảnh trong ngày + 15 ngày trước, của 13 thị trường: mỗi nước có ảnh riêng) và
+ * Wikimedia (ảnh nổi bật mỗi ngày). Kho ảnh được tích lũy trong localStorage: mỗi lần làm mới thêm ảnh mới,
+ * giữ ARCHIVE_MAX ảnh gần nhất, nên càng dùng kho càng nhiều ảnh và màn hình chờ vẫn có ảnh khi mất mạng.
  *
  * Nguồn mới (ảnh gia đình từ USB, ảnh đóng gói sẵn) chỉ cần thêm vào SOURCES: function (cb) -> cb([photo]).
  * photo: {url, title, credit, date: 'YYYY-MM-DD', source}
@@ -10,6 +11,18 @@
 
   var POOL_KEY = 'photos.pool';
   var REFRESH_MS = 6 * 3600 * 1000;
+  var ARCHIVE_MAX = 120;
+  // Vietnam first (its captions win when markets share a photo); the others add their own photos of the day.
+  var MARKETS = [['vi-VN', ''], ['en-US', 'Mỹ'], ['ja-JP', 'Nhật Bản'], ['en-GB', 'Anh'], ['de-DE', 'Đức'], ['fr-FR', 'Pháp'],
+    ['zh-CN', 'Trung Quốc'], ['en-IN', 'Ấn Độ'], ['pt-BR', 'Brazil'], ['en-CA', 'Canada'], ['en-AU', 'Úc'],
+    ['es-ES', 'Tây Ban Nha'], ['it-IT', 'Ý']];
+  var CJK = /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/;   // Lexend has no glyphs for these
+
+  /** The photo behind a Bing URL ("OHR.NaejangsanNP_ROW…" and "OHR.NaejangsanNP_EN-US…" are the same). */
+  function photoKey(p) {
+    var m = /OHR\.([^_]+)_/.exec(p.url);
+    return m ? 'bing:' + m[1] : p.url;
+  }
 
   function pad(n) { return (n < 10 ? '0' : '') + n; }
   function isoDate(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
@@ -18,23 +31,30 @@
   // ---- sources -----------------------------------------------------------------------------
 
   function bing(cb) {
-    var out = [], pending = 2;
-    [0, 8].forEach(function (idx) {
-      Platform.getJSON('https://www.bing.com/HPImageArchive.aspx?format=js&n=8&mkt=vi-VN&idx=' + idx, function (err, data) {
-        if (!err && data && data.images) {
-          data.images.forEach(function (im) {
-            var m = /^(.*?)\s*\((©[^)]*)\)\s*$/.exec(im.copyright || '');
-            var sd = String(im.startdate || '');
-            out.push({
-              url: 'https://www.bing.com' + im.urlbase + '_1920x1080.jpg',
-              title: m ? m[1] : (im.title || ''),
-              credit: m ? m[2] : '',
-              date: sd.slice(0, 4) + '-' + sd.slice(4, 6) + '-' + sd.slice(6, 8),
-              source: 'Bing'
+    var out = [], pending = MARKETS.length * 2;
+    MARKETS.forEach(function (mk, rank) {
+      [0, 8].forEach(function (idx) {
+        Platform.getJSON('https://www.bing.com/HPImageArchive.aspx?format=js&n=8&mkt=' + mk[0] + '&idx=' + idx, function (err, data) {
+          if (!err && data && data.images) {
+            data.images.forEach(function (im) {
+              var m = /^(.*?)\s*\((©[^)]*)\)\s*$/.exec(im.copyright || '');
+              var sd = String(im.startdate || ''), title = m ? m[1] : (im.title || '');
+              if (CJK.test(title)) title = 'Ảnh Bing ' + mk[1];
+              out.push({
+                url: 'https://www.bing.com' + im.urlbase + '_1920x1080.jpg',
+                title: title,
+                credit: m && !CJK.test(m[2]) ? m[2] : '',
+                date: sd.slice(0, 4) + '-' + sd.slice(4, 6) + '-' + sd.slice(6, 8),
+                source: 'Bing',
+                rank: rank
+              });
             });
-          });
-        }
-        if (--pending === 0) cb(out);
+          }
+          if (--pending === 0) {
+            out.sort(function (a, b) { return a.rank - b.rank; });   // the Vietnamese caption first
+            cb(out);
+          }
+        });
       });
     });
   }
@@ -73,7 +93,7 @@
   /** Calls cb(pool) with today's photos first, the rest shuffled. Fetches at most every REFRESH_MS. */
   function loadPool(choice, force, cb) {
     var cached = Platform.store.get(POOL_KEY, null);
-    var fresh = cached && cached.choice === choice && Date.now() - cached.at < REFRESH_MS &&
+    var fresh = cached && cached.v === 2 && cached.choice === choice && Date.now() - cached.at < REFRESH_MS &&
       cached.day === isoDate(new Date());
     if (fresh && !force && cached.photos.length) return cb(order(cached.photos));
 
@@ -83,13 +103,28 @@
         results = results.concat(photos);
         if (--pending > 0) return;
         if (results.length) {
-          Platform.store.set(POOL_KEY, { choice: choice, at: Date.now(), day: isoDate(new Date()), photos: results });
-          cb(order(results));
+          var archive = merge(results, cached && cached.choice === choice ? cached.photos : []);
+          Platform.store.set(POOL_KEY, { v: 2, choice: choice, at: Date.now(), day: isoDate(new Date()), photos: archive });
+          cb(order(archive));
         } else {
           cb(cached && cached.photos ? order(cached.photos) : []);   // offline: last known photos
         }
       });
     });
+  }
+
+  /** New photos join the stored ones; one entry per photo, the ARCHIVE_MAX newest kept. */
+  function merge(fresh, old) {
+    var seen = {}, out = [];
+    fresh.concat(old || []).forEach(function (p) {
+      var k = photoKey(p);
+      if (seen[k]) return;
+      seen[k] = true;
+      if (p.title && CJK.test(p.title)) p.title = '';   // left over from before captions were cleaned
+      out.push(p);
+    });
+    out.sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
+    return out.slice(0, ARCHIVE_MAX);
   }
 
   function order(photos) {
@@ -261,5 +296,5 @@
   /** The cached pool (refreshed when stale): today's photo first, then the others shuffled. */
   function pool(choice, cb) { loadPool(choice, false, cb); }
 
-  root.Backdrop = { create: create, palette: palette, isoDate: isoDate, today: today, pool: pool };
+  root.Backdrop = { create: create, palette: palette, isoDate: isoDate, today: today, pool: pool, merge: merge, photoKey: photoKey };
 })(this);

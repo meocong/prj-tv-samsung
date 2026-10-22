@@ -71,3 +71,17 @@ test('quotes: next() gives a different saying each time and covers the whole lis
   const a = Quotes.next(), b = Quotes.next();
   assert.notEqual(a.text, b.text);
 });
+
+test('photo library: one entry per photo across Bing markets, newest kept, no CJK captions', () => {
+  const { Backdrop } = require('../app/js/backdrop.js');
+  const p = (id, date, title) => ({ url: 'https://www.bing.com/th?id=OHR.' + id + '_1920x1080.jpg', date, title });
+  const fresh = [p('Bridge_ROW1', '2026-10-21', 'Cầu Nguyễn Hoàng'), p('Bridge_EN-US2', '2026-10-21', 'Nguyen Hoang Bridge')];
+  const old = [p('Sloth_ROW3', '2026-10-20', 'Sloth'), p('Momiji_JA-JP4', '2026-10-19', '蔦沼, 青森県')];
+  const out = Backdrop.merge(fresh, old);
+  assert.deepEqual(out.map((x) => x.title), ['Cầu Nguyễn Hoàng', 'Sloth', '']);
+  const many = [];
+  for (let i = 0; i < 150; i++) many.push(p('P' + i + '_ROW', '2026-' + String(1 + (i % 9)).padStart(2, '0') + '-' + String(1 + (i % 28)).padStart(2, '0'), 't'));
+  const capped = Backdrop.merge(many, []);
+  assert.equal(capped.length, 120);
+  assert.ok(capped[0].date >= capped[119].date);
+});

@@ -59,7 +59,7 @@ window.CONFIG = {
     showStats: false,          // CPU và bộ nhớ trống dưới đồng hồ
     returnHome: true,          // thoát app mở từ đây (YouTube, Netflix…) thì quay về màn hình này
     wallpaper: 'photo',        // 'photo' (ảnh Bing) | 'black'
-    wallpaperEvery: 5,        // phút giữa hai hình nền; 0 = mỗi ngày một ảnh
+    wallpaperEvery: 60, wallpaperPin: '',        // phút giữa hai hình nền; 0 = mỗi ngày một ảnh
     clock24: true,
     showLunar: true,
     showWeather: true,

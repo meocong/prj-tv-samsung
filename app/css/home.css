@@ -40,6 +40,7 @@ html, body {
   transition: opacity 1600ms ease;
 }
 #wallB { display: none; }   /* home.js lays out the back canvas only while crossfading */
+#wallPre { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; background-size: 1920px 1080px; }
 
 .wall.shown { opacity: 1; }
 
@@ -754,3 +755,23 @@ b.x, .dRow b.x { color: #ff9b9b; }
 }
 
 #toast.shown { opacity: 1; }
+
+/* ---- Thư viện hình nền ------------------------------------------------------------------------ */
+
+#gallery { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; background: rgba(8, 8, 10, 0.94); z-index: 20; }
+.glHead { position: absolute; left: 112px; top: 60px; font-size: 52px; font-weight: 300; }
+.glSub { position: absolute; left: 114px; top: 132px; font-size: 22px; color: rgba(255, 255, 255, 0.55); }
+.glViewport { position: absolute; left: 92px; top: 186px; width: 1736px; height: 880px; overflow: hidden; padding: 20px; }
+#glGrid { transition: transform 300ms cubic-bezier(0.25, 0.8, 0.3, 1); }
+.glItem { display: inline-block; vertical-align: top; width: 400px; margin: 0 24px 34px 0; }
+.glItem:nth-child(4n) { margin-right: 0; }
+.glImg { position: relative; width: 400px; height: 225px; border-radius: 20px; overflow: hidden; background: #1c1c22;
+  transition: transform 220ms cubic-bezier(0.34, 1.4, 0.5, 1), box-shadow 220ms ease; }
+.glImg img { width: 400px; height: 225px; object-fit: cover; display: block; }
+.glItem.focused .glImg { transform: scale(1.06); box-shadow: 0 0 0 4px #fff, 0 18px 40px rgba(0, 0, 0, 0.6); }
+.glCap { margin-top: 12px; font-size: 18px; color: rgba(255, 255, 255, 0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.glItem.focused .glCap { color: #fff; }
+.glBadge { position: absolute; top: 12px; left: 12px; padding: 5px 12px; border-radius: 12px; font-size: 16px;
+  background: rgba(0, 0, 0, 0.6); color: #fff; }
+#glMenu { position: absolute; left: 610px; top: 380px; width: 700px; padding: 28px 24px; border-radius: 36px;
+  background: #2a2a2e; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }

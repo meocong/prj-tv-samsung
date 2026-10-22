@@ -8,7 +8,11 @@
 </head>
 <body>
   <!-- Wallpaper: today's photo, darkened so the dock and the clock always read. -->
-  <canvas id="wallA" class="wall" width="1920" height="1080"></canvas>
+  <!-- A 64×36 copy of the last wallpaper, painted on the very first frame while the full photo is read. -->
+<div id="wallPre"></div>
+<script>try { var t = JSON.parse(localStorage.getItem('nhaminh.wallThumb') || 'null'), st = JSON.parse(localStorage.getItem('nhaminh.settings') || '{}');
+  if (t && st.wallpaper !== 'black' && st.wallpaper !== 'sky') document.getElementById('wallPre').style.backgroundImage = 'url(' + t + ')'; } catch (e) {}</script>
+<canvas id="wallA" class="wall" width="1920" height="1080"></canvas>
   <canvas id="wallB" class="wall" width="1920" height="1080"></canvas>
   <div id="wallDim"></div>
 
@@ -100,15 +104,23 @@
     <div id="nightDim"></div>
   </div>
 
+  <!-- Thư viện hình nền: pick a photo for now, or keep it. -->
+  <div id="gallery" class="hidden">
+    <div class="glHead">Chọn hình nền</div><div class="glSub"></div>
+    <div class="glViewport"><div id="glGrid"></div></div>
+    <div id="glMenu" class="hidden"></div>
+  </div>
+
   <div id="toast"></div>
 
-  <script src="$WEBAPIS/webapis/webapis.js"></script>
+  <script>performance.mark('scripts');</script>
   <script src="config.js"></script>
   <script src="js/apps.js"></script>
   <script src="js/lunar.js"></script>
   <script src="js/events.js"></script>
   <script src="js/platform.js"></script>
   <script src="js/input.js"></script>
+  <script src="js/imgcache.js"></script>
   <script src="js/backdrop.js"></script>
   <script src="js/weather.js"></script>
   <script src="js/games.js"></script>
@@ -118,6 +130,8 @@
   <script src="js/news.js"></script>
   <script src="js/calendar.js"></script>
   <script src="js/shelf.js"></script>
+  <script>performance.mark('home');</script>
   <script src="js/home.js"></script>
+  <script>performance.mark('ready');</script>
 </body>
 </html>

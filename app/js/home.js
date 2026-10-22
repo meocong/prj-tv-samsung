@@ -745,9 +745,12 @@
         choice('clock24', 'Đồng hồ', [[true, '24 giờ'], [false, '12 giờ']], updateClockNow),
         choice('wallpaper', 'Hình nền', [['photo', 'Ảnh đẹp mỗi ngày'], ['mix', 'Ảnh đẹp + ảnh gia đình'], ['family', 'Ảnh gia đình'],
           ['sky', 'Bầu trời theo giờ'], ['black', 'Đen (như Apple TV)']], applyWallpaper),
-        choice('wallpaperEvery', 'Đổi hình nền', [[5, 'Mỗi 5 phút'], [10, 'Mỗi 10 phút'], [30, 'Mỗi 30 phút'], [0, 'Mỗi ngày']],
+        choice('wallpaperEvery', 'Đổi hình nền', [[5, 'Mỗi 5 phút'], [15, 'Mỗi 15 phút'], [30, 'Mỗi 30 phút'], [60, 'Mỗi giờ'],
+          [180, 'Mỗi 3 giờ'], [0, 'Mỗi ngày']],
           function () { nextWallpaper(); }),
-        { label: 'Đổi hình nền ngay', run: function () { nextWallpaper(); toast('Đang đổi hình nền'); } },
+        { label: 'Chọn hình nền', value: function () { return settings.wallpaperPin ? 'Đang giữ cố định' : ''; },
+          run: function () { closeSettings(); openGallery(); } },
+        { label: 'Đổi hình nền ngay', run: function () { unpinQuietly(); nextWallpaper(); toast('Đang đổi hình nền'); } },
         onOff('showLunar', 'Âm lịch và ngày lễ', function () { eventsKey = ''; applyVisibility(); renderEvents(); }, ['Hiện', 'Ẩn']),
         onOff('showWeather', 'Thời tiết và AQI', applyVisibility, ['Hiện', 'Ẩn']),
         onOff('showToday', 'Ngày này năm xưa, câu nói, tin mới', showToday, ['Hiện', 'Ẩn']),
@@ -989,7 +992,8 @@
   // ---- wallpaper -------------------------------------------------------------------------------
 
   var walls = [$('wallA'), $('wallB')], wallFront = 0, wallPool = [], wallIndex = -1, wallAt = 0, wallLoading = false;
-  var wallMode = '', hideTimer = null;
+  var wallMode = '', wallUrl = '', hideTimer = null, firstWallMs = 0;
+  var WALL_KEY = 'wall';   // {url, at, mode}: the photo on screen and when it came, kept across restarts
 
   function familyPool() {
     return (C.familyPhotos || []).map(function (url) { return { url: url, title: C.familyName || '', date: '0000-00-00' }; });
@@ -1000,11 +1004,24 @@
     var mode = settings.wallpaper, fam = familyPool();
     if (mode === 'family') return cb(fam);
     Backdrop.pool('bing', function (bing) {
+      // A fixed order (newest first), so after a restart "the next photo" is the one after the last shown.
+      bing = bing.slice().sort(function (a, b) { return a.date !== b.date ? (a.date < b.date ? 1 : -1) : (a.url < b.url ? -1 : 1); });
       if (mode !== 'mix' || !fam.length) return cb(bing.length ? bing : fam);
       var out = [], f = 0;
       bing.forEach(function (p, i) { out.push(p); if (i % 2 === 1) out.push(fam[f++ % fam.length]); });
       cb(out);
     });
+  }
+
+  function indexOfUrl(url) {
+    for (var i = 0; i < wallPool.length; i++) if (wallPool[i].url === url) return i;
+    return -1;
+  }
+
+  function setPool(pool) {
+    if (!pool.length) return;
+    wallPool = pool;
+    wallIndex = indexOfUrl(wallUrl);
   }
 
   /** Crossfade to the back canvas. Only one canvas is laid out except during the fade (GPU memory). */
@@ -1017,44 +1034,101 @@
     front.classList.remove('shown');
     wallFront = 1 - wallFront;
     hideTimer = setTimeout(function () { front.style.display = 'none'; }, 1800);
-    wallAt = Date.now();
   }
 
-  /** Show the next photo of the pool, decoded before the crossfade so the fade itself never stutters. */
-  function nextWallpaper() {
-    if (wallLoading || !wallPool.length) return;
+  /**
+   * Put a photo up: from the TV's own cache when it has it (instant, no network), decoded before the crossfade
+   * so the fade never stutters. keepTime: the photo was already up before a restart, its time still counts.
+   */
+  function showPhoto(url, keepTime, onFail) {
+    if (wallLoading) return;
     wallLoading = true;
-    wallIndex = (wallIndex + 1) % wallPool.length;
-    var p = wallPool[wallIndex];
-    var img = new Image();
-    if (/^https?:/.test(p.url)) img.crossOrigin = 'anonymous';
-    img.onload = function () {
-      function go() {
-        wallLoading = false;
-        paintWallpaper(walls[1 - wallFront], img);
-        swapWalls();
-        document.body.classList.add('photoWall');
-      }
-      if (img.decode) img.decode().then(go, go); else go();
-    };
-    img.onerror = function () { wallLoading = false; };
-    img.src = p.url;
+    ImageCache.load(url, function (src, cached) {
+      var img = new Image();
+      if (!cached && /^https?:/.test(src)) img.crossOrigin = 'anonymous';
+      img.onload = function () {
+        function go() {
+          wallLoading = false;
+          if (!firstWallMs) firstWallMs = Math.round(performance.now());
+          paintWallpaper(walls[1 - wallFront], img);
+          ImageCache.done(src);
+          swapWalls();
+          document.body.classList.add('photoWall');
+          hidePreview();
+          wallUrl = url;
+          wallIndex = indexOfUrl(url);
+          if (!keepTime) wallAt = Date.now();
+          S.set(WALL_KEY, { url: url, at: wallAt, mode: settings.wallpaper });
+          // The photo after this one goes into the cache now, while nothing else is happening.
+          var next = wallPool.length ? wallPool[(wallIndex + 1) % wallPool.length] : null;
+          if (next) setTimeout(function () { idle(function () { ImageCache.warm(next.url); }); }, 5000);
+          setTimeout(function () { idle(saveThumb); }, 2500);
+        }
+        if (img.decode) img.decode().then(go, go); else go();
+      };
+      img.onerror = function () { wallLoading = false; ImageCache.done(src); if (onFail) onFail(); };
+      img.src = src;
+    });
   }
+
+  /** The tiny copy for the next start (index.html paints it before any script runs). */
+  function saveThumb() {
+    try {
+      var c = document.createElement('canvas');
+      c.width = 64;
+      c.height = 36;
+      c.getContext('2d').drawImage(walls[wallFront], 0, 0, 64, 36);
+      S.set('wallThumb', c.toDataURL('image/jpeg', 0.8));
+    } catch (e) { /* a tainted canvas or full storage: start without it */ }
+  }
+
+  /** Once the real photo has faded in, the preview layer goes (one less full-screen layer for the GPU). */
+  function hidePreview() {
+    var pre = $('wallPre');
+    if (pre.style.display !== 'none') setTimeout(function () { pre.style.display = 'none'; }, 1800);
+  }
+
+  function showWallpaper(i, keepTime, tries) {
+    if (!wallPool.length) return;
+    var n = wallPool.length, k = ((i % n) + n) % n;
+    tries = tries || 0;
+    showPhoto(wallPool[k].url, keepTime, function () { if (tries < 3) showWallpaper(k + 1, false, tries + 1); });   // offline: skip it
+  }
+
+  function nextWallpaper() { showWallpaper(wallIndex + 1); }
 
   function applyWallpaper() {
-    var mode = settings.wallpaper, changed = mode !== wallMode;
+    var mode = settings.wallpaper, booting = !wallMode, changed = mode !== wallMode;
     wallMode = mode;
     document.body.classList.toggle('blackWall', mode === 'black');
-    if (mode === 'sky') { if (changed) skyHour = -1; paintSky(); return; }
+    if (mode === 'sky') { if (changed) skyHour = -1; paintSky(); hidePreview(); return; }
     if (mode === 'black') {
+      $('wallPre').style.display = 'none';
       walls.forEach(function (w) { w.classList.remove('shown'); });
       document.body.classList.remove('photoWall');
       return;
     }
+    if (!changed && walls[wallFront].classList.contains('shown')) return buildPool(setPool);
+
+    if (settings.wallpaperPin) {   // a photo kept from the gallery: it stays, whatever the time
+      var kept = S.get(WALL_KEY, null);
+      if (kept) wallAt = kept.at || 0;   // un-keep later and the usual clock carries on from here
+      wallUrl = settings.wallpaperPin;
+      buildPool(setPool);
+      return showPhoto(settings.wallpaperPin, true);
+    }
+    // Starting up: the last photo and its time come back from storage, so the clock keeps running across restarts.
+    var saved = booting ? S.get(WALL_KEY, null) : null, gotPool = false, early = false;
+    if (saved && saved.mode === mode && saved.url) { wallAt = saved.at || 0; wallUrl = saved.url; } else saved = null;
     buildPool(function (pool) {
-      wallPool = pool;
-      if (changed || !walls[wallFront].classList.contains('shown')) { wallIndex = -1; nextWallpaper(); }
+      gotPool = true;
+      setPool(pool);
+      if (early) { if (wallpaperDue()) nextWallpaper(); return; }   // the saved photo is already on its way
+      if (!saved || wallIndex === -1) return showWallpaper(0);
+      if (wallpaperDue()) showWallpaper(wallIndex + 1); else showWallpaper(wallIndex, true);
     });
+    // The photo list is being refreshed from the network (a new day): show the saved photo from the cache meanwhile.
+    if (!gotPool && saved) { early = true; showPhoto(saved.url, true); }
   }
 
   // Bầu trời: the colour of the sky at this hour, painted once per hour (cleanyourtv's Sky theme, but still).
@@ -1113,17 +1187,22 @@
     g.fillRect(0, 0, 1920, 1080);
   }
 
-  /** Time for another photo? Counted while apps run and the screensaver shows too, so coming home brings a new one. */
+  /**
+   * Time for another photo? Measured from the last change (stored), so it holds across apps, the screensaver,
+   * the TV sleeping and restarts: turn the TV on after an hour and a new photo is waiting.
+   */
   function wallpaperDue() {
     var every = settings.wallpaperEvery, mode = settings.wallpaper;
+    if (settings.wallpaperPin) return false;   // kept on purpose (Thư viện hình nền)
     if (mode !== 'photo' && mode !== 'mix' && mode !== 'family') return false;
-    if (!every) return mode === 'photo' && wallPool.length > 0 && wallPool[0].date !== Backdrop.isoDate(new Date());
+    if (!every) return Backdrop.isoDate(new Date(wallAt)) !== Backdrop.isoDate(new Date());   // "Mỗi ngày"
     return Date.now() - wallAt >= every * 60000;
   }
 
   function refreshWallpaperIfDue() {
     if (!wallpaperDue()) return;
-    if (settings.wallpaperEvery) nextWallpaper(); else applyWallpaper();
+    if (!settings.wallpaperEvery && wallIndex !== 0) showWallpaper(0);   // daily: today's photo first
+    else nextWallpaper();
   }
 
   // A new photo every few minutes, but not while keys are being pressed: a crossfade mid-navigation would stutter.
@@ -1132,7 +1211,150 @@
     if (zone === 'frame' || document.hidden || Date.now() - lastInput < 5000) return;
     refreshWallpaperIfDue();
   }, 10000);
-  setInterval(function () { buildPool(function (pool) { if (pool.length) wallPool = pool; }); }, 3 * 3600000);
+  setInterval(function () { buildPool(setPool); }, 3 * 3600000);
+
+  // ---- Thư viện hình nền: every photo on hand; OK → use it for now, or keep it ----------------------
+
+  var gallery = { list: [], focus: 0, menu: null, menuFocus: 0 };
+  var GL_COLS = 4, GL_ROW = 293;   // a thumbnail with its caption, in px
+
+  function everyText() {
+    var m = settings.wallpaperEvery;
+    return !m ? 'mỗi ngày' : m % 60 === 0 ? (m === 60 ? 'mỗi giờ' : 'mỗi ' + m / 60 + ' giờ') : 'mỗi ' + m + ' phút';
+  }
+
+  /** Bing's own 640×360 copy for the grid (42 KB instead of 400). */
+  function thumbOf(url) { return /bing\.com\/th\?id=/.test(url) ? url.replace('_1920x1080.jpg', '_640x360.jpg') : url; }
+
+  function openGallery() {
+    Backdrop.pool('bing', function (bing) {
+      bing = bing.slice().sort(function (a, b) { return a.date !== b.date ? (a.date < b.date ? 1 : -1) : (a.url < b.url ? -1 : 1); });
+      gallery.list = bing.concat(familyPool());
+      var cur = -1;
+      gallery.list.forEach(function (p, i) { if (p.url === wallUrl) cur = i; });
+      gallery.focus = Math.max(0, cur);
+      gallery.menu = null;
+      renderGallery();
+      pills.forEach(function (el) { el.classList.remove('focused'); });
+      $('gallery').classList.remove('hidden');
+      zone = 'gallery';
+    });
+  }
+
+  function captionOf(p) {
+    if (p.date === '0000-00-00') return 'Ảnh gia đình';
+    var t = (p.title || '').split(' (©')[0];
+    return (p.date ? p.date.slice(8, 10) + '/' + p.date.slice(5, 7) + '  ·  ' : '') + t;
+  }
+
+  function renderGallery() {
+    $('gallery').querySelector('.glSub').textContent = settings.wallpaperPin ?
+      'Đang giữ cố định một ảnh  ·  OK để đổi hoặc bỏ cố định  ·  Back để đóng' :
+      gallery.list.length + ' ảnh, tự đổi ' + everyText() + '  ·  OK để chọn  ·  Back để đóng';
+    $('glGrid').innerHTML = gallery.list.map(function (p) {
+      var badge = p.url === settings.wallpaperPin ? 'Cố định' : p.url === wallUrl ? 'Đang dùng' : '';
+      return '<div class="glItem"><div class="glImg"><img data-src="' + esc(thumbOf(p.url)) + '">' +
+        (badge ? '<span class="glBadge">' + badge + '</span>' : '') + '</div><div class="glCap">' + esc(captionOf(p)) + '</div></div>';
+    }).join('');
+    focusGallery(gallery.focus);
+  }
+
+  function focusGallery(i) {
+    gallery.focus = Math.max(0, Math.min(i, gallery.list.length - 1));
+    var els = $('glGrid').children;
+    for (var k = 0; k < els.length; k++) els[k].classList.toggle('focused', k === gallery.focus);
+    var row = Math.floor(gallery.focus / GL_COLS), rows = Math.ceil(gallery.list.length / GL_COLS);
+    var top = Math.max(0, Math.min(row - 1, rows - 3));   // three rows on screen, the focused one never at the edge
+    $('glGrid').style.transform = 'translateY(' + (-top * GL_ROW) + 'px)';
+    // Thumbnails load as their rows come near: a hundred at once would choke the TV.
+    for (var r = Math.max(0, top - 1) * GL_COLS; r < Math.min(els.length, (top + 4) * GL_COLS); r++) {
+      var img = els[r].querySelector('img');
+      if (!img.src) img.src = img.getAttribute('data-src');
+    }
+  }
+
+  function galleryMenu() {
+    var p = gallery.list[gallery.focus], rows = [
+      { label: 'Dùng ảnh này', sub: 'đến hạn vẫn tự đổi', run: function () { useWallpaper(p, false); } },
+      { label: 'Giữ cố định ảnh này', sub: 'không tự đổi nữa', run: function () { useWallpaper(p, true); } }
+    ];
+    if (settings.wallpaperPin) rows.push({ label: 'Bỏ cố định', sub: 'tự đổi lại như cũ', run: function () {
+      settings.wallpaperPin = '';
+      saveSettings();
+      closeGallery();
+      toast('Hình nền sẽ tự đổi lại');
+    } });
+    gallery.menu = rows;
+    gallery.menuFocus = 0;
+    renderGalleryMenu();
+    $('glMenu').classList.remove('hidden');
+  }
+
+  function renderGalleryMenu() {
+    $('glMenu').innerHTML = gallery.menu.map(function (r, i) {
+      return '<div class="inputRow' + (i === gallery.menuFocus ? ' focused' : '') + '"><span>' + esc(r.label) +
+        '</span><span class="sub">' + esc(r.sub) + '</span></div>';
+    }).join('');
+  }
+
+  function useWallpaper(p, keep) {
+    settings.wallpaperPin = keep ? p.url : '';
+    if (settings.wallpaper === 'sky' || settings.wallpaper === 'black') settings.wallpaper = 'photo';
+    saveSettings();
+    closeGallery();
+    if (settings.wallpaper !== wallMode) {   // from Bầu trời / Đen back to photos
+      wallMode = settings.wallpaper;
+      document.body.classList.remove('blackWall');
+      buildPool(setPool);
+    }
+    if (p.url !== wallUrl) showPhoto(p.url, false); else { wallAt = Date.now(); S.set(WALL_KEY, { url: p.url, at: wallAt, mode: settings.wallpaper }); }
+    toast(keep ? 'Đã giữ cố định hình nền này' :
+      'Đã đổi hình nền  ·  tự đổi ' + everyText());
+  }
+
+  /** Changing the photo on purpose (green key, "Đổi hình nền ngay") ends a pin. */
+  function unpinQuietly() {
+    if (!settings.wallpaperPin) return;
+    settings.wallpaperPin = '';
+    saveSettings();
+  }
+
+  function closeGallery() {
+    $('gallery').classList.add('hidden');
+    $('glMenu').classList.add('hidden');
+    $('glGrid').innerHTML = '';   // let the thumbnails go
+    gallery.menu = null;
+    zone = 'none';
+    focusTile(focused, true);
+  }
+
+  function galleryKey(k) {
+    if (gallery.menu) {
+      if (k === 'up') { gallery.menuFocus = Math.max(0, gallery.menuFocus - 1); renderGalleryMenu(); }
+      else if (k === 'down') { gallery.menuFocus = Math.min(gallery.menu.length - 1, gallery.menuFocus + 1); renderGalleryMenu(); }
+      else if (k === 'ok') gallery.menu[gallery.menuFocus].run();
+      else if (k === 'back' || k === 'left') { gallery.menu = null; $('glMenu').classList.add('hidden'); }
+      return;
+    }
+    var col = gallery.focus % GL_COLS;
+    if (k === 'left') { if (col > 0) focusGallery(gallery.focus - 1); }
+    else if (k === 'right') { if (col < GL_COLS - 1) focusGallery(gallery.focus + 1); }
+    else if (k === 'up') focusGallery(gallery.focus - GL_COLS);
+    else if (k === 'down') { if (gallery.focus + GL_COLS < gallery.list.length) focusGallery(gallery.focus + GL_COLS); else focusGallery(gallery.list.length - 1); }
+    else if (k === 'ok') galleryMenu();
+    else if (k === 'back') closeGallery();
+  }
+
+  // For tools/inspect.js: why did (or didn't) the wallpaper change?
+  root.NhaMinhDebug = {
+    wall: function () {
+      return { mode: settings.wallpaper, every: settings.wallpaperEvery, pool: wallPool.length, index: wallIndex,
+        loading: wallLoading, sinceChangeS: Math.round((Date.now() - wallAt) / 1000),
+        sinceKeyS: Math.round((Date.now() - lastInput) / 1000), zone: zone, hidden: document.hidden,
+        front: walls[wallFront].id, url: wallUrl, firstShownMs: firstWallMs };
+    },
+    wallDueNow: function () { wallAt = 0; }
+  };
 
   // ---- screensaver (Khung ảnh) ----------------------------------------------------------------
 
@@ -1183,7 +1405,7 @@
 
   setInterval(function () {
     var mins = settings.screensaverAfter;
-    if (mins && zone !== 'frame' && zone !== 'calendar' && zone !== 'news' && !document.hidden && Date.now() - lastInput > mins * 60000) enterFrame();
+    if (mins && zone !== 'frame' && zone !== 'calendar' && zone !== 'news' && zone !== 'gallery' && !document.hidden && Date.now() - lastInput > mins * 60000) enterFrame();
   }, 5000);
 
   // ---- rearranging ---------------------------------------------------------------------------
@@ -1246,7 +1468,8 @@
     if (k === 'ok') okDown = true;
 
     if (zone === 'calendar') { Calendar.key(k); return; }
-    if (!editing && k === 'green' && (zone === 'grid' || zone === 'top' || zone === 'none')) { nextWallpaper(); return; }
+    if (zone === 'gallery') { galleryKey(k); return; }
+    if (!editing && k === 'green' && (zone === 'grid' || zone === 'top' || zone === 'none')) { unpinQuietly(); nextWallpaper(); return; }
     if (!editing && (k === 'yellow' || k === 'playpause' || k === 'play')) { enterFrame(); return; }
     if (!editing && k === 'blue') { if (zone === 'settings') closeSettings(); else { closePanels(); openSettings(); } return; }
 
