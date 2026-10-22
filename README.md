@@ -9,12 +9,12 @@ thay chỗ launcher, còn phần "debloat" làm bằng Cài đặt và DNS (xem 
 ## Có gì
 
 - **Màn hình chính:**
-  - Dock 4 app dùng nhiều nhất: YouTube, Netflix, VTV GO, VieON.
+  - Dock 4 app: VTV GO, YouTube, Netflix, VieON (phím 1–4 trên remote mở thẳng).
   - Tên app hiện chữ lớn phía trên; khung kính sáng nhảy giữa các ô.
   - Giữ OK trên một ô để di chuyển ô đó.
-  - Phím 1–4 mở app trên dock.
-  - **Hàng YouTube xổ ra:** dừng ở ô YouTube một lát thì video mới của các kênh Việt chọn sẵn hiện phía trên
-    dock (tin tức, giải trí, âm nhạc, thiếu nhi). Bấm ▲ để chọn, OK để mở thẳng video, ▼ để gập lại. Danh sách
+  - **Hàng YouTube xổ ra:** di chuyển tới ô YouTube và dừng một lát thì video mới của các kênh Việt chọn sẵn hiện phía trên
+    dock (tin tức, giải trí, âm nhạc, thiếu nhi). Bấm ▲ để chọn, OK để mở thẳng video, ▼ để gập lại. Lúc mở TV hay thoát app về, hàng này không tự
+    bật, để khối Hôm nay và thời tiết luôn đọc được. Danh sách
     kênh nằm trong `youtubeChannels` của [app/config.js](app/config.js). Dùng RSS công khai, không cần API key.
   - **Tin mới:** ô đầu hàng thứ hai. Mở ra là 40 tin mới nhất từ VnExpress, Thanh Niên, Dân Trí, kèm ảnh và
     tóm tắt; ▲▼ để chọn, Back để đóng.

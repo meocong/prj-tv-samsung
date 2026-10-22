@@ -16,9 +16,9 @@ window.CONFIG = {
   // `title` đổi tên hiển thị, `skipIf` bỏ qua mục khi có app khác. App chưa cài thì bỏ qua.
   // Nhà có YouTube Premium nên dùng YouTube gốc; TizenBrew (TizenTube) nằm cuối danh sách.
   dock: [
-    { match: ['youtube'], id: '9Ur5IzDKqV.TizenYouTube' },
+    { match: ['vtvgo'], id: 'OxWOiJOOyr.vtv' },      // VTVgo Truyền hình số Quốc gia (bản mới); đứng đầu nên không
+    { match: ['youtube'], id: '9Ur5IzDKqV.TizenYouTube' },   // có hàng video che Hôm nay và thời tiết lúc mở TV
     { match: ['netflix'] },
-    { match: ['vtvgo'], id: 'OxWOiJOOyr.vtv' },      // VTVgo Truyền hình số Quốc gia (bản mới)
     { match: ['vieon'] }
   ],
 

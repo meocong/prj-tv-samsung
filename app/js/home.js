@@ -263,7 +263,8 @@
 
   // ---- focus & glass -------------------------------------------------------------------------
 
-  function focusTile(i) {
+  /** quiet: focus put back (boot, return from an app, end of the screensaver) — no YouTube row unasked. */
+  function focusTile(i, quiet) {
     if (!items.length) return;
     i = Math.max(0, Math.min(i, items.length - 1));
     setZone('grid');
@@ -300,7 +301,7 @@
       glassShown = true;
     }
 
-    if (row === 0) { showHero(items[i]); hideShelf(); scheduleTopShelf(items[i]); }
+    if (row === 0) { showHero(items[i]); hideShelf(); if (quiet) closeTopShelf(); else scheduleTopShelf(items[i]); }
     else { hideHero(); showShelf(items[i]); closeTopShelf(); topShelf.dismissed = null; }
     setAmbient(items[i].color || [90, 90, 96]);   // the glow follows the focused tile in every row
   }
@@ -538,7 +539,7 @@
   function closeNews() {
     $('newsView').classList.add('hidden');
     zone = 'none';
-    focusTile(focused);
+    focusTile(focused, true);
   }
 
   // ---- top bar -------------------------------------------------------------------------------
@@ -1167,7 +1168,7 @@
     $('frame').classList.add('hidden');
     Platform.setTvScreenSaver(true);
     zone = 'none';
-    if (zoneBeforeFrame === 'top') focusPill(pillFocus); else focusTile(focused);
+    if (zoneBeforeFrame === 'top') focusPill(pillFocus); else focusTile(focused, true);
     setTimeout(function () { idle(refreshWallpaperIfDue, { timeout: 2000 }); }, 700);
   }
 
@@ -1322,7 +1323,7 @@
       if (keep) items.forEach(function (it, i) { if (itemId(it) === keep) focused = i; });
       animateIn();
       zone = 'none';
-      focusTile(focused);
+      focusTile(focused, true);
     });
   }
 
@@ -1340,7 +1341,7 @@
     closePanels();
     pills.forEach(function (p) { p.classList.remove('focused'); });
     zone = 'none';
-    focusTile(focused);
+    focusTile(focused, true);
     setTimeout(function () {
       idle(function () { updateStats(); weatherFeed.refresh(); applyWallpaper(); refreshWallpaperIfDue(); }, { timeout: 3000 });
     }, 600);
