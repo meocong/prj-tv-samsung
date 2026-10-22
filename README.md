@@ -58,17 +58,17 @@ thay chỗ launcher, còn phần "debloat" làm bằng Cài đặt và DNS (xem 
   - Thông tin TV, số lần mở lại / tải lại màn hình chính.
   - Cài đặt TV: mở thẳng cài đặt của Samsung (hẹn giờ tắt, hình, tiếng).
 
-- **Kho dữ liệu trên TV** (mở là hiện ngay, cập nhật ngầm phía sau, có giới hạn để không đầy máy; tổng dưới 1 MB):
+- **Kho dữ liệu trên TV** (mở là hiện ngay; chỉ tải mạng khi đã tới hạn, không tải chỉ vì vừa mở app; có giới hạn để không đầy máy):
 
   | Kho | Giữ | Làm mới |
   |---|---|---|
   | Ảnh nền (IndexedDB) | 30 ảnh ≈ 12 MB, xóa ảnh lâu không dùng nhất | ảnh kế tiếp tải sẵn |
-  | Danh sách ảnh Bing | 120 ảnh gần nhất | 6 giờ |
+  | Danh sách ảnh Bing | 120 ảnh gần nhất | mỗi ngày một lần |
   | Câu nói hay | 600 danh ngôn (cộng dồn 50 câu mỗi ngày) + tục ngữ | mỗi ngày / tục ngữ mỗi tuần |
   | Hàng YouTube | 12 video mới nhất | mỗi giờ |
   | Tin mới | 40 tin | 20 phút |
-  | Ngày này năm xưa | 60 ngày, 30 mục mỗi ngày | 60 ngày; ngày mai và ngày đang chọn trên Lịch tải sẵn |
-  | Thời tiết | mỗi nơi đã chọn một bản | 20 phút |
+  | Ngày này năm xưa (IndexedDB) | mãi mãi, tối đa 366 trang ngày ≈ 1,5 MB | mỗi ngày tải một lần trong đời; mỗi ngày một lần tải sẵn 7 ngày tới, và ngày đang chọn trên Lịch |
+  | Thời tiết | mỗi nơi đã chọn một bản | khi bản đang có cũ hơn 20 phút |
 
 ## Cập nhật lên TV (từ máy Mac)
 

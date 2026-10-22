@@ -90,11 +90,10 @@
 
   function wanted(choice) { return choice === 'mix' ? ['bing', 'wikimedia'] : [choice]; }
 
-  /** Calls cb(pool) with today's photos first, the rest shuffled. Fetches at most every REFRESH_MS. */
+  /** Calls cb(pool) with today's photos first, the rest shuffled. Fetches at most once a day (a new day). */
   function loadPool(choice, force, cb) {
     var cached = Platform.store.get(POOL_KEY, null);
-    var fresh = cached && cached.v === 2 && cached.choice === choice && Date.now() - cached.at < REFRESH_MS &&
-      cached.day === isoDate(new Date());
+    var fresh = cached && cached.v === 2 && cached.choice === choice && cached.day === isoDate(new Date());   // once a day
     if (fresh && !force && cached.photos.length) return cb(order(cached.photos));
 
     var names = wanted(choice), results = [], pending = names.length;
@@ -271,7 +270,7 @@
       });
     }
 
-    // Refresh the list a few times a day so a new daily photo shows up without a restart.
+    // Look at the list a few times a day: from the store, fetched only once a new day has begun.
     setInterval(function () { loadPool(opts.source(), false, function (photos) { if (photos.length) pool = withExtra(photos); }); },
       REFRESH_MS / 2);
 

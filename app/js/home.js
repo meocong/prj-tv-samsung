@@ -1596,8 +1596,16 @@
   applyVisibility();
   applyWallpaper();
   setTimeout(refreshToday, 1500);   // after the first paint
-  setTimeout(function () {          // later still: the YouTube row and tomorrow's "ngày này năm xưa"
-    idle(function () { Shelf.warm(); History.prefetch(new Date(Date.now() + 86400000)); });
+  setTimeout(function () {          // later still: the YouTube row, and (once a day) the week ahead for the calendar
+    idle(function () { Shelf.warm(); });
+    var today = Backdrop.isoDate(new Date());
+    if (S.get('calPrefetched', '') === today) return;
+    S.set('calPrefetched', today);
+    for (var d = 1; d <= 7; d++) {
+      (function (d) {
+        setTimeout(function () { idle(function () { History.prefetch(new Date(Date.now() + d * 86400000)); }); }, d * 5000);
+      })(d);
+    }
   }, 8000);
   setInterval(function () { if (!document.hidden) Shelf.warm(); }, 60 * 60000);
   loadApps();

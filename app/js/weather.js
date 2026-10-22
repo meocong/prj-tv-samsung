@@ -84,6 +84,7 @@
       }
       var data = shape(result.forecast, result.air);
       data.loc = locKey;
+      data.at = Date.now();
       Platform.store.set(CACHE_KEY, data);
       var places = Platform.store.get(BY_PLACE, {}) || {};
       places[locKey] = data;
@@ -135,12 +136,13 @@
       var loc = getLoc();
       var stored = (Platform.store.get(BY_PLACE, {}) || {})[key(loc)];
       if (stored) cb(stored);   // the forecast we had for this place, until the new one arrives
+      if (stored && Date.now() - (stored.at || 0) < REFRESH_MS) return;   // still fresh: no request
       fetchAll(loc, function (data) {
         if (data && (data.loc === key(loc) || !data.loc)) cb(data);
       }, key(loc));
     }
     tick();
-    setInterval(tick, REFRESH_MS);
+    setInterval(tick, 5 * 60000);   // checks often, fetches only once the forecast is REFRESH_MS old
     return { refresh: tick };
   }
 

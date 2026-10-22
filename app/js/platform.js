@@ -34,6 +34,42 @@
     }
   };
 
+  /**
+   * Things kept for good (the calendar's "ngày này năm xưa"): IndexedDB, so they never crowd localStorage.
+   * kv.get(key, cb(value|null)), kv.set(key, value). Without IndexedDB it falls back to localStorage.
+   */
+  var kvDb = null, kvFailed = false, kvWaiting = [];
+  function kvOpen(cb) {
+    if (kvDb || kvFailed) return cb(kvDb);
+    kvWaiting.push(cb);
+    if (kvWaiting.length > 1) return;
+    function flush(d) { var w = kvWaiting; kvWaiting = []; w.forEach(function (f) { f(d); }); }
+    try {
+      var req = root.indexedDB.open('nhaminh-kv', 1);
+      req.onupgradeneeded = function () { req.result.createObjectStore('kv'); };
+      req.onsuccess = function () { kvDb = req.result; flush(kvDb); };
+      req.onerror = req.onblocked = function () { kvFailed = true; flush(null); };
+    } catch (e) { kvFailed = true; flush(null); }
+  }
+  var kv = {
+    get: function (key, cb) {
+      kvOpen(function (d) {
+        if (!d) return cb(store.get('kv.' + key, null));
+        try {
+          var r = d.transaction('kv').objectStore('kv').get(key);
+          r.onsuccess = function () { cb(r.result === undefined ? null : r.result); };
+          r.onerror = function () { cb(null); };
+        } catch (e) { cb(null); }
+      });
+    },
+    set: function (key, value) {
+      kvOpen(function (d) {
+        if (!d) return store.set('kv.' + key, value);
+        try { d.transaction('kv', 'readwrite').objectStore('kv').put(value, key); } catch (e) { /* full: fetched again next time */ }
+      });
+    }
+  };
+
   function ownAppId() {
     try { return tizen.application.getCurrentApplication().appInfo.id; } catch (e) { return 'NhaMinh000.NhaMinh'; }
   }
@@ -282,6 +318,7 @@
     isTV: isTV,
     getJSON: getJSON,
     store: store,
+    kv: kv,
     ownAppId: ownAppId,
     listApps: listApps,
     launch: launch,

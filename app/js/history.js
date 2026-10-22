@@ -4,28 +4,33 @@
  * Nguồn chính là trang "22 tháng 10" của Wikipedia tiếng Việt (mục Sự kiện, Sinh, Mất); Wikipedia tiếng Việt
  * không có API "on this day" nên đọc wikitext và gỡ đánh dấu wiki. Khi trang có ít mục, thêm sự kiện chọn lọc
  * của Wikipedia tiếng Anh (feed onthisday/selected) và dịch sang tiếng Việt (translate.googleapis.com, không
- * chính thức: lỗi thì giữ nguyên tiếng Anh). Cache theo ngày trong localStorage.
+ * chính thức: lỗi thì giữ nguyên tiếng Anh). Mỗi ngày tải về được lưu mãi trên TV (IndexedDB, tối đa 366 trang
+ * ngày ≈ 1,5 MB): mỗi ngày chỉ tải một lần trong đời, sau đó mở là hiện ngay, không cần mạng.
  *
  *   History.load(date, function (items) { ... })   // items: [{year, text, kind: 'event'|'birth'|'death'}]
  */
 (function (root) {
   'use strict';
 
-  var CACHE = 'history2.';
+  var OLD = 'nhaminh.history2.';   // the localStorage copies of earlier versions, moved over once
   var MIN_ITEMS = 10;
-  var KEEP_MS = 60 * 86400000, PER_DAY = 30, DAYS_KEPT = 60;   // what happened on 22/10 hardly changes
+  var PER_DAY = 40;   // what happened on 22/10 does not change: fetched once, kept for good
 
-  /** Store one day, dropping the least recently stored days beyond DAYS_KEPT (~4 KB each). */
-  function store(key, items) {
-    Platform.store.set(key, { at: Date.now(), items: items.slice(0, PER_DAY) });
+  function save(day, items) { Platform.kv.set('history.' + day, { at: Date.now(), items: items.slice(0, PER_DAY) }); }
+
+  /** Earlier versions kept a few days in localStorage: move them into the store and free the space. */
+  var moved = false;
+  function moveOld() {
+    if (moved) return;
+    moved = true;
     try {
-      var days = [];
-      for (var i = 0; i < localStorage.length; i++) {
+      for (var i = localStorage.length - 1; i >= 0; i--) {
         var k = localStorage.key(i);
-        if (k.indexOf('nhaminh.' + CACHE) === 0) days.push({ k: k, at: (JSON.parse(localStorage.getItem(k)) || {}).at || 0 });
+        if (k.indexOf(OLD) !== 0) continue;
+        var v = JSON.parse(localStorage.getItem(k));
+        if (v && v.items && v.items.length) Platform.kv.set('history.' + k.slice(OLD.length), v);
+        localStorage.removeItem(k);
       }
-      days.sort(function (a, b) { return b.at - a.at; });
-      days.slice(DAYS_KEPT).forEach(function (d) { localStorage.removeItem(d.k); });
     } catch (e) { /* no storage */ }
   }
 
@@ -92,10 +97,22 @@
     }, 15000);
   }
 
+  /** cb(items) from the store when the day is there, else fetched (and stored for good). */
   function load(date, cb) {
-    var key = CACHE + (date.getMonth() + 1) + '-' + date.getDate();
-    var cached = Platform.store.get(key, null);
-    if (cached && cached.items && cached.items.length && Date.now() - cached.at < KEEP_MS) return cb(cached.items);
+    var day = (date.getMonth() + 1) + '-' + date.getDate();
+    var old = (function () { try { return JSON.parse(localStorage.getItem(OLD + day)); } catch (e) { return null; } })();
+    moveOld();
+    if (old && old.items && old.items.length) return cb(old.items);   // just moved: same answer, no wait
+    Platform.kv.get('history.' + day, function (cached) {
+      if (cached && cached.items && cached.items.length) return cb(cached.items);
+      fetchDay(date, function (items) {
+        if (items.length) save(day, items);
+        cb(items);
+      });
+    });
+  }
+
+  function fetchDay(date, cb) {
     var page = date.getDate() + '_tháng_' + (date.getMonth() + 1);
     var url = 'https://vi.wikipedia.org/w/api.php?action=parse&prop=wikitext&format=json&formatversion=2&origin=*&page=' +
       encodeURIComponent(page);
@@ -103,8 +120,7 @@
       var items = !err && data && data.parse ? parse(data.parse.wikitext || '') : [];
       function done(all) {
         all.sort(function (a, b) { return b.year - a.year; });
-        if (all.length) store(key, all);
-        cb(all.length ? all : (cached ? cached.items : []));
+        cb(all);
       }
       if (items.filter(function (i) { return i.kind === 'event'; }).length >= MIN_ITEMS) return done(items);
       fromEnglish(date, function (en) {
