@@ -1,0 +1,756 @@
+/*
+ * Nhà Mình — màn hình chính kiểu Apple TV, port từ webos-vibehack (MIT), bản web của launcher
+ * cleanyourtv (MIT). Kích thước là dp của launcher Android nhân đôi: app web trên TV render ở 1920x1080.
+ * Tizen 5.5 = Chromium 69: không dùng inset, gap trong flex, aspect-ratio, backdrop-filter.
+ */
+
+@font-face {
+  font-family: 'Lexend';
+  src: url('../fonts/Lexend.ttf') format('truetype');
+  font-weight: 100 900;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  font-family: 'Lexend', sans-serif;
+  cursor: default;
+  -webkit-font-smoothing: antialiased;
+}
+
+.hidden { display: none !important; }
+
+/* ---- wallpaper ------------------------------------------------------------------------------- */
+
+.wall, #wallDim {
+  position: absolute;
+  top: 0; left: 0; width: 1920px; height: 1080px;
+  pointer-events: none;
+}
+
+/* One canvas with the photo and its darkening baked in (home.js): a single static layer is all the
+   TV's GPU has to composite behind the tiles. */
+.wall {
+  opacity: 0;
+  transition: opacity 1600ms ease;
+}
+#wallB { display: none; }   /* home.js lays out the back canvas only while crossfading */
+
+.wall.shown { opacity: 1; }
+
+/* Over a photo the coloured glow only costs frames: Apple TV does without it too. */
+body.photoWall .ambient { display: none; }
+
+/* The grid scrolled up over the photo: dim it further so rows of tiles stay calm. */
+#wallDim { background: rgba(0, 0, 0, 0.7); opacity: 0; transition: opacity 400ms ease; }
+body.scrolled #wallDim { opacity: 1; }
+body.shelfOpen #wallDim { opacity: 0.6; }
+
+/* ---- ambient glow ---------------------------------------------------------------------------- */
+
+.ambient {
+  position: absolute;
+  top: 0; left: 0; width: 1920px; height: 1080px;
+  opacity: 0;
+  transition: opacity 400ms ease;
+  pointer-events: none;
+}
+
+/* ---- top shelf ------------------------------------------------------------------------------- */
+
+#hero {
+  position: absolute;
+  left: 136px;
+  font-size: 92px;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 260ms ease, transform 200ms ease;
+  pointer-events: none;
+}
+
+#heroSub {
+  position: absolute;
+  left: 140px;
+  max-width: 900px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 23px;
+  font-weight: 300;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  transition: opacity 260ms ease;
+  pointer-events: none;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.5);
+}
+
+#shelf {
+  position: absolute;
+  left: 136px;
+  top: 64px;
+  width: 1500px;
+  opacity: 0;
+  transform: translateY(-12px);
+  transition: opacity 240ms ease, transform 300ms cubic-bezier(0.25, 0.8, 0.3, 1);
+  pointer-events: none;
+  z-index: 3;
+}
+#shelf.shown { opacity: 1; transform: none; }
+.shelfTitle { font-size: 72px; font-weight: 300; letter-spacing: -0.02em; line-height: 1.1; white-space: nowrap; }
+.shelfDesc { margin-top: 10px; color: rgba(255, 255, 255, 0.62); font-size: 24px; font-weight: 300; white-space: nowrap; }
+
+#today {
+  position: absolute;
+  left: 112px;
+  top: 300px;
+  width: 940px;
+  padding: 18px 26px 16px;
+  border-radius: 28px;
+  background: rgba(10, 10, 14, 0.42);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  transition: opacity 600ms ease, transform 360ms cubic-bezier(0.25, 0.8, 0.3, 1);
+  pointer-events: none;
+  z-index: 2;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.6);
+}
+#today.shown { opacity: 1; }
+body.scrolled #today { opacity: 0 !important; transform: translateY(-40px); }
+.tdLabel { color: #ffd479; font-size: 17px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; }
+.tdText {
+  margin-top: 8px; font-size: 26px; font-weight: 300; line-height: 1.4; color: rgba(255, 255, 255, 0.92);
+  max-height: 76px; overflow: hidden;
+}
+.tdMeta { margin-top: 6px; font-size: 18px; color: rgba(255, 255, 255, 0.5); }
+#frQuote { margin-top: 18px; max-width: 1100px; font-size: 24px; font-weight: 300; font-style: italic; color: rgba(255, 255, 255, 0.75); }
+
+/* ---- top shelf ------------------------------------------------------------------------------ */
+
+#shelfRow {
+  position: absolute;
+  left: 112px;
+  top: 300px;
+  width: 1696px;
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 260ms ease, transform 320ms cubic-bezier(0.25, 0.8, 0.3, 1);
+  pointer-events: none;
+  z-index: 2;
+}
+body.shelfOpen #shelfRow { opacity: 1; transform: none; }
+body.shelfOpen #today, body.shelfOpen #wxWidget, body.shelfOpen #hero, body.shelfOpen #heroSub { opacity: 0 !important; }
+body.scrolled #shelfRow { opacity: 0; transition: none; }   /* gone at once: the dock slides up through it */
+.srTitle { margin: 0 0 16px 4px; font-size: 24px; font-weight: 500; text-shadow: 0 1px 10px rgba(0, 0, 0, 0.8); }
+.srTitle span { color: rgba(255, 255, 255, 0.78); font-weight: 400; }
+.srSrc:before { content: '·'; margin: 0 14px; }
+.srTitle .srHint { margin-left: 28px; font-size: 18px; color: rgba(255, 255, 255, 0.6); }
+/* Padded so the focused card can grow without being clipped. */
+.srViewport { width: 1732px; height: 308px; margin: -18px -18px 0; padding: 18px 18px 0; overflow: hidden; }
+.srCards { white-space: nowrap; transition: transform 300ms cubic-bezier(0.25, 0.8, 0.3, 1); }
+.srCard { display: inline-block; vertical-align: top; width: 316px; margin-right: 29px; white-space: normal; }
+.srImg {
+  position: relative; width: 316px; height: 178px; border-radius: 20px; overflow: hidden; background: #1c1c22;
+  transition: transform 220ms cubic-bezier(0.34, 1.4, 0.5, 1), box-shadow 220ms ease;
+  will-change: transform;
+}
+.srImg img { width: 316px; height: 178px; display: block; }
+.srCard.focused .srImg { transform: scale(1.07); box-shadow: 0 0 0 4px #fff, 0 18px 40px rgba(0, 0, 0, 0.5); }
+.srText { margin-top: 14px; font-size: 19px; line-height: 1.35; max-height: 52px; overflow: hidden; color: rgba(255, 255, 255, 0.92); text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6); }
+.srCard.focused .srText { color: #fff; }
+.srMeta { margin-top: 4px; font-size: 16px; color: rgba(255, 255, 255, 0.66); text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---- Tin mới ----------------------------------------------------------------------------------- */
+
+#newsView { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; z-index: 7; background: #0a0a0e; animation: fadeIn 220ms ease; }
+.nvHead { position: absolute; left: 96px; top: 52px; font-size: 48px; font-weight: 300; }
+#nvList { position: absolute; left: 96px; top: 140px; width: 780px; height: 900px; overflow: hidden; }
+.nvItem { display: flex; align-items: center; height: 104px; margin-bottom: 8px; padding: 0 18px 0 12px; border-radius: 22px; }
+.nvItem img { width: 128px; height: 76px; border-radius: 12px; object-fit: cover; flex-shrink: 0; background: #1c1c22; }
+.nvItem i { flex: none; width: 128px; height: 76px; border-radius: 12px; background: rgba(255, 255, 255, 0.1); }
+.nvItem div { margin-left: 18px; min-width: 0; }
+.nvItem b { display: block; font-size: 21px; font-weight: 400; line-height: 1.3; max-height: 54px; overflow: hidden; }
+.nvItem span { display: block; margin-top: 4px; font-size: 16px; color: rgba(255, 255, 255, 0.5); }
+.nvItem.focused { background: rgba(255, 255, 255, 0.95); color: #000; }
+.nvItem.focused span { color: rgba(0, 0, 0, 0.55); }
+#nvStory { position: absolute; left: 940px; top: 140px; width: 884px; }
+#nvStory img { width: 884px; height: 497px; border-radius: 28px; object-fit: cover; background: #1c1c22; }
+#nvStory h2 { margin-top: 26px; font-size: 34px; font-weight: 400; line-height: 1.3; }
+#nvStory p { margin-top: 16px; font-size: 23px; font-weight: 300; line-height: 1.55; color: rgba(255, 255, 255, 0.78); max-height: 216px; overflow: hidden; }
+#nvStory small { display: block; margin-top: 18px; font-size: 18px; color: rgba(255, 255, 255, 0.45); }
+
+/* ---- header ---------------------------------------------------------------------------------- */
+
+header {
+  position: absolute;
+  top: 52px;
+  left: 112px;
+  right: 112px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  z-index: 3;
+  transition: opacity 300ms ease, transform 360ms cubic-bezier(0.25, 0.8, 0.3, 1);
+}
+
+/* Below the dock: the header slides away so the grid gets the whole screen. */
+body.scrolled header {
+  opacity: 0;
+  transform: translateY(-48px);
+  pointer-events: none;
+}
+
+.heart { display: inline-block; width: 0.95em; height: 0.95em; margin: 0 0.12em; vertical-align: -0.12em; fill: #ff5a7a; }
+
+#greeting {
+  margin-left: 8px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+#leftBlock { flex: 1 1 auto; min-width: 0; }
+#timeRow { display: flex; align-items: flex-end; }
+
+#clock, #greeting, #dateLine, #lunarLine, #statsLine { text-shadow: 0 1px 12px rgba(0, 0, 0, 0.55); }
+#lunarLine { color: rgba(255, 255, 255, 0.62) !important; }
+
+#clock {
+  font-size: 104px;
+  font-weight: 200;
+  letter-spacing: -0.04em;
+  line-height: 1.12;
+}
+
+#ampm {
+  margin: 0 0 22px 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+}
+
+.divider {
+  width: 2px;
+  height: 64px;
+  margin: 0 32px 20px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+#date { margin-bottom: 18px; min-width: 0; }
+
+#dateLine {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+#lunarLine {
+  margin-top: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 21px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+#statsLine { margin-top: 4px; color: rgba(255, 255, 255, 0.4); font-size: 18px; letter-spacing: 0.06em; white-space: nowrap; }
+
+#topButtons { display: flex; flex-shrink: 0; margin-top: 50px; padding-left: 24px; }
+
+/* Frosted pill, tvOS style. */
+.pill {
+  display: flex;
+  align-items: center;
+  height: 80px;
+  margin-left: 20px;
+  padding: 0 36px 0 30px;
+  border-radius: 40px;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.08));
+  color: #fff;
+  font-size: 27px;
+  font-weight: 400;
+  white-space: nowrap;
+  transition: background 160ms ease, color 160ms ease, transform 200ms ease;
+}
+
+.pill svg { width: 40px; height: 40px; margin-right: 16px; fill: currentColor; }
+
+/* Settings: a round icon button, like the top-right controls on Apple TV. */
+.pill.round { width: 80px; padding: 0; justify-content: center; }
+.pill.round svg { margin: 0; }
+
+.pill.focused {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: transparent;
+  color: #000;
+  transform: scale(1.04);
+}
+
+/* The family, signed in: a round photo at the end of the top bar, like an Apple TV profile. */
+.avatar {
+  width: 80px;
+  height: 80px;
+  margin-left: 20px;
+  border-radius: 40px;
+  background: url('../img/family.jpg') center / cover;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.22);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.avatar.focused { transform: scale(1.08); box-shadow: 0 0 0 4px #fff, 0 10px 30px rgba(0, 0, 0, 0.5); }
+
+/* ---- weather widget (right of the top shelf, above the dock) --------------------------------- */
+
+#wxWidget {
+  position: absolute;
+  right: 112px;
+  bottom: 418px;            /* sits on the dock band, whatever its height */
+  width: 720px;
+  padding: 22px 30px 20px;
+  border-radius: 34px;
+  background: rgba(14, 14, 18, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  z-index: 2;
+  transition: opacity 300ms ease, transform 360ms cubic-bezier(0.25, 0.8, 0.3, 1);
+}
+body.scrolled #wxWidget { opacity: 0; transform: translateY(-40px); }
+body.blackWall #wxWidget { background: rgba(255, 255, 255, 0.05); }
+
+.wxNow { display: flex; align-items: center; }
+#wxIcon { flex-shrink: 0; }
+#wxIcon svg { width: 72px; height: 72px; display: block; fill: none; color: #fff; }
+#wxTemp { flex-shrink: 0; margin: 0 22px 0 14px; font-size: 76px; font-weight: 200; letter-spacing: -0.04em; line-height: 1; }
+.wxText { flex: 1 1 auto; min-width: 0; }
+#wxDesc, #wxMeta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#wxDesc { font-size: 27px; font-weight: 400; }
+#wxMeta { margin-top: 6px; color: rgba(255, 255, 255, 0.62); font-size: 20px; }
+#wxMeta .rain { color: #8fd3ff; }
+
+#wxAir { display: flex; align-items: center; margin-top: 16px; font-size: 20px; white-space: nowrap; }
+#wxAir i { flex-shrink: 0; width: 14px; height: 14px; border-radius: 7px; margin-right: 10px; }
+#wxAir b { flex-shrink: 0; font-weight: 500; margin-right: 14px; }
+#wxAir span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: rgba(255, 255, 255, 0.6); }
+
+#wxDays { display: flex; justify-content: space-between; margin-top: 14px; padding-top: 14px; border-top: 2px solid rgba(255, 255, 255, 0.08); }
+.wxDay { display: flex; align-items: center; color: rgba(255, 255, 255, 0.6); font-size: 19px; white-space: nowrap; }
+.wxDay svg { width: 32px; height: 32px; margin: 0 7px; fill: none; color: #fff; }
+.wxDay b { color: #fff; font-weight: 400; margin-right: 5px; }
+
+/* ---- upcoming days (live, under the clock) ------------------------------------------------- */
+
+#eventsRow { display: flex; margin: 22px 0 0 4px; }
+.evChip {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  margin-right: 12px;
+  padding: 0 22px 0 16px;
+  border-radius: 24px;
+  background: rgba(0, 0, 0, 0.34);
+  border: 2px solid rgba(255, 255, 255, 0.13);
+  font-size: 20px;
+  white-space: nowrap;
+}
+.evChip svg { width: 24px; height: 24px; margin-right: 10px; fill: none; stroke: #ffd479; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.evChip .t { max-width: 230px; overflow: hidden; text-overflow: ellipsis; }
+.evChip .when { margin-left: 10px; color: rgba(255, 255, 255, 0.55); }
+.evChip.today { border-color: rgba(255, 212, 121, 0.7); }
+.evChip.today .when { color: #ffd479; }
+body.blackWall .evChip { background: rgba(255, 255, 255, 0.05); }
+
+#frEvents { display: flex; margin-top: 14px; font-size: 22px; font-weight: 300; color: rgba(255, 255, 255, 0.7); }
+#frEvents span { white-space: nowrap; margin-right: 18px; padding-right: 18px; border-right: 2px solid rgba(255, 255, 255, 0.2); }
+#frEvents span:last-child { border-right: 0; }
+#frEvents b { color: #ffd479; font-weight: 400; }
+
+/* ---- grid ------------------------------------------------------------------------------------ */
+
+#viewport { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; overflow: hidden; }
+
+#stage {
+  position: absolute;
+  top: 0; left: 0; width: 1920px; height: 1080px;
+  transition: transform 300ms cubic-bezier(0.25, 0.8, 0.3, 1);
+}
+
+/* The tvOS lighter band behind the dock row. */
+#dockBand {
+  position: absolute;
+  border-radius: 52px;
+  background: rgba(20, 20, 22, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  transition: opacity 260ms ease;
+}
+
+#dockBand.above, .item.shown.above { opacity: 0; }
+
+body.blackWall #dockBand { background: #141416; }
+
+:root { --tw: 360px; --th: 202px; --tr: 32px; }
+
+.item {
+  position: absolute;
+  width: var(--tw);
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 400ms ease, transform 400ms cubic-bezier(0.2, 0.8, 0.3, 1),
+    left 320ms cubic-bezier(0.25, 0.8, 0.3, 1), top 320ms cubic-bezier(0.25, 0.8, 0.3, 1);
+}
+
+.item.shown { opacity: 1; transform: none; }
+
+.item.dock .name { display: none; }
+
+/* Rearranging: the held tile wiggles and floats above the others; the glass steps aside. */
+.item.moving { z-index: 2; }
+
+.item.moving .card {
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
+  animation: wiggle 240ms ease-in-out infinite alternate;
+}
+
+@keyframes wiggle {
+  from { transform: scale(1.1) rotate(-1.2deg); }
+  to { transform: scale(1.1) rotate(1.2deg); }
+}
+
+body.editing #glass { opacity: 0 !important; }
+
+.card {
+  position: relative;
+  width: var(--tw);
+  height: var(--th);
+  border-radius: var(--tr);
+  overflow: hidden;
+  background: #1c1c1e;
+  transition: transform 180ms ease;
+  will-change: transform;   /* rastered once: focusing a tile only scales an existing texture */
+}
+
+/* Faint rim so black tiles (Netflix, Apple TV) still read against the black page. */
+.card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: var(--tr);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+.item.focused .card {
+  transform: scale(1.1);
+  transition: transform 220ms cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+
+.card img, .card svg { position: absolute; top: 0; left: 0; width: var(--tw); height: var(--th); }
+
+/* No artwork: the app's initials on graphite. */
+.card .letter {
+  position: absolute;
+  top: 0; left: 0; width: var(--tw); height: var(--th);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #3a3a40, #1f1f24);
+  font-size: 56px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.name {
+  height: 44px;
+  margin-top: 14px;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 26px;
+  font-weight: 400;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  transform: translateY(-12px);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.item.focused .name { opacity: 1; transform: translateY(8px); }
+
+/* The single floating glass highlight that springs between tiles. */
+#glass {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+  border-radius: 47px;
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.07));
+  box-shadow: 0 0 4px 2px rgba(255, 255, 255, 0.19), 0 0 12px 4px rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease, transform 340ms cubic-bezier(0.3, 1.25, 0.45, 1);
+}
+
+/* Bright top specular. */
+#glass::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 45%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0));
+}
+
+/* ---- dropdowns ------------------------------------------------------------------------------- */
+
+.panel {
+  position: absolute;
+  z-index: 5;
+  padding: 16px;
+  border-radius: 40px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(180deg, rgba(42, 42, 46, 0.97), rgba(22, 22, 24, 0.98));
+  transform-origin: top;
+  animation: drop 220ms cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+@keyframes drop { from { opacity: 0; transform: translateY(-16px) scaleY(0.92); } to { opacity: 1; transform: none; } }
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  height: 84px;
+  padding: 0 28px;
+  border-radius: 24px;
+  font-size: 28px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.inputRow svg { width: 40px; height: 40px; margin-right: 20px; fill: currentColor; }
+.inputRow .sub { margin-left: auto; padding-left: 48px; color: rgba(255, 255, 255, 0.45); font-size: 22px; }
+.inputRow.focused { background: rgba(255, 255, 255, 0.96); color: #000; }
+.inputRow.focused .sub { color: rgba(0, 0, 0, 0.5); }
+
+.separator { height: 2px; margin: 12px 24px; background: rgba(255, 255, 255, 0.12); }
+
+/* "Hôm nay": weather, air and the days ahead, under the weather pill. */
+#todayPanel { width: 700px; padding: 34px 38px 30px; }
+.tdNow { display: flex; align-items: center; }
+.tdNow svg { width: 96px; height: 96px; margin-right: 24px; fill: none; color: #fff; }
+.tdTemp { font-size: 96px; font-weight: 200; letter-spacing: -0.04em; line-height: 1; }
+.tdDesc { margin-left: 26px; }
+.tdDesc b { display: block; font-size: 30px; font-weight: 400; }
+.tdDesc span { display: block; margin-top: 6px; color: rgba(255, 255, 255, 0.55); font-size: 21px; }
+.tdAir { display: flex; align-items: center; margin-top: 26px; padding: 18px 22px; border-radius: 22px; background: rgba(255, 255, 255, 0.06); font-size: 22px; }
+.tdAir i { width: 18px; height: 18px; border-radius: 9px; margin-right: 14px; flex-shrink: 0; }
+.tdAir b { font-weight: 500; margin-right: 10px; }
+.tdAir span { color: rgba(255, 255, 255, 0.6); }
+.tdDays { display: flex; justify-content: space-between; margin-top: 26px; }
+.tdDay { width: 140px; text-align: center; color: rgba(255, 255, 255, 0.6); font-size: 21px; }
+.tdDay svg { width: 44px; height: 44px; display: block; margin: 8px auto; fill: none; color: #fff; }
+.tdDay b { color: #fff; font-weight: 400; }
+.tdHead { margin: 30px 0 10px; color: rgba(255, 255, 255, 0.45); font-size: 19px; letter-spacing: 0.16em; text-transform: uppercase; }
+.tdEvent { display: flex; justify-content: space-between; padding: 12px 0; font-size: 24px; border-top: 2px solid rgba(255, 255, 255, 0.06); }
+.tdEvent span { color: rgba(255, 255, 255, 0.5); font-size: 21px; }
+.tdEvent.today span { color: #ffd479; }
+
+/* ---- settings sheet -------------------------------------------------------------------------- */
+
+#settings {
+  position: absolute;
+  top: 40px;
+  right: 40px;
+  width: 800px;
+  height: 1000px;
+  padding: 48px 36px 32px;
+  border-radius: 48px;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(180deg, rgba(36, 36, 40, 0.98), rgba(18, 18, 20, 0.99));
+  z-index: 6;
+  animation: sheet 300ms cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+@keyframes sheet { from { opacity: 0; transform: translateX(48px); } to { opacity: 1; transform: none; } }
+
+.sheetHead { display: flex; align-items: center; margin: 0 0 28px 20px; font-size: 50px; font-weight: 300; }
+#settingsBack { width: 44px; color: rgba(255, 255, 255, 0.5); font-size: 56px; line-height: 1; margin-top: -6px; }
+#settingsList .inputRow { height: 78px; font-size: 26px; margin-bottom: 4px; }
+#settingsList .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.val { margin-left: auto; padding-left: 28px; color: rgba(255, 255, 255, 0.55); white-space: nowrap; }
+.inputRow.focused .val { color: rgba(0, 0, 0, 0.6); }
+.val.cycle:before { content: '‹   '; opacity: 0; }
+.val.cycle:after { content: '   ›'; opacity: 0; }
+.inputRow.focused .val.cycle:before, .inputRow.focused .val.cycle:after { opacity: 0.45; }
+.chev { margin-left: 18px; color: rgba(255, 255, 255, 0.4); font-size: 34px; line-height: 1; }
+.inputRow.focused .chev { color: rgba(0, 0, 0, 0.45); }
+.inputRow.info .val { color: rgba(255, 255, 255, 0.7); }
+.inputRow.info.focused .val { color: rgba(0, 0, 0, 0.7); }
+
+/* ---- Lịch vạn niên ------------------------------------------------------------------------------ */
+
+#calendar {
+  position: absolute;
+  top: 0; left: 0; width: 1920px; height: 1080px;
+  z-index: 7;
+  background: linear-gradient(135deg, #101016 0%, #07070a 100%);
+  animation: fadeIn 260ms ease;
+}
+
+#calDay { position: absolute; left: 96px; top: 70px; width: 640px; }
+.cdRel { color: #ffd479; font-size: 22px; letter-spacing: 0.16em; text-transform: uppercase; }
+.cdSolar, .cdLunar { display: flex; align-items: center; margin-top: 10px; }
+.cdNum { width: 220px; font-size: 150px; font-weight: 200; letter-spacing: -0.05em; line-height: 1; }
+.cdLunar .cdNum { font-size: 112px; color: #ffd479; }
+.cdWhen { font-size: 30px; font-weight: 300; line-height: 1.4; color: rgba(255, 255, 255, 0.85); }
+.cdLunar { padding-top: 18px; margin-top: 18px; border-top: 2px solid rgba(255, 255, 255, 0.08); }
+.cdCanChi { margin-top: 26px; font-size: 23px; color: rgba(255, 255, 255, 0.6); }
+.cdCanChi b { color: #fff; font-weight: 400; }
+.cdStar { display: inline-block; margin-top: 22px; padding: 10px 22px; border-radius: 22px; font-size: 22px; }
+.cdStar.good { background: rgba(61, 220, 132, 0.15); color: #7ef0ae; }
+.cdStar.bad { background: rgba(255, 90, 90, 0.12); color: #ff9b9b; }
+.cdTerm { display: inline-block; margin: 22px 0 0 14px; font-size: 22px; color: rgba(255, 255, 255, 0.6); }
+.cdTerm b { color: #fff; font-weight: 400; }
+.cdHead { margin-top: 30px; color: rgba(255, 255, 255, 0.45); font-size: 18px; letter-spacing: 0.16em; text-transform: uppercase; }
+.cdHours { display: flex; flex-wrap: wrap; width: 640px; margin-top: 8px; }
+.cdHours span { width: 200px; margin: 6px 12px 6px 0; padding: 10px 16px; border-radius: 16px; background: rgba(255, 255, 255, 0.06); font-size: 21px; color: rgba(255, 255, 255, 0.65); }
+.cdHours b { color: #fff; font-weight: 500; margin-right: 6px; }
+.cdEvent { margin-top: 22px; padding: 14px 20px; border-radius: 18px; background: rgba(255, 212, 121, 0.12); color: #ffd479; font-size: 24px; }
+
+.cdNext { margin-top: 6px; width: 640px; }
+.cdNext div { display: flex; align-items: baseline; padding: 9px 0; border-bottom: 2px solid rgba(255, 255, 255, 0.05); font-size: 21px; }
+.cdNext b { width: 80px; color: #ffd479; font-weight: 500; }
+.cdNext span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cdNext i { font-style: normal; color: rgba(255, 255, 255, 0.45); font-size: 19px; white-space: nowrap; }
+.cdHours span { padding: 8px 16px !important; }
+.cdHead { margin-top: 24px !important; }
+
+.cdAlm { margin-top: 16px; font-size: 21px; color: rgba(255, 255, 255, 0.6); }
+.cdAlm b { font-weight: 500; }
+b.g, .dRow b.g { color: #7ef0ae; }
+b.x, .dRow b.x { color: #ff9b9b; }
+.cdWarn { display: inline-block; margin-top: 12px; padding: 6px 14px; border-radius: 14px; background: rgba(255, 90, 90, 0.12); color: #ff9b9b; font-size: 19px; }
+.cdOk { margin-top: 12px; color: rgba(255, 255, 255, 0.35); font-size: 17px; letter-spacing: 0.08em; }
+
+#calDetail {
+  position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; z-index: 2;
+  padding: 56px 96px 0; background: #0a0a0e; animation: fadeIn 200ms ease;
+}
+.dHead { margin-bottom: 22px; }
+.dTitle { font-size: 46px; font-weight: 300; }
+.dSub { margin-top: 6px; font-size: 26px; color: #ffd479; }
+.dSub em { font-style: normal; color: #fff; }
+.dBadges { display: flex; margin-top: 16px; }
+.dBadges span { margin-right: 12px; padding: 8px 18px; border-radius: 18px; font-size: 20px; background: rgba(255, 255, 255, 0.06); }
+.dBadges span.g { color: #7ef0ae; background: rgba(61, 220, 132, 0.12); }
+.dBadges span.x { color: #ff9b9b; background: rgba(255, 90, 90, 0.12); }
+.dCol { float: left; width: 552px; height: 800px; margin-right: 32px; overflow: hidden; }
+.dCol:nth-of-type(4) { margin-right: 0; }
+.dCol h3 { margin: 18px 0 8px; color: rgba(255, 255, 255, 0.45); font-size: 17px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; }
+.dCol p { margin: 6px 0; font-size: 20px; line-height: 1.45; color: rgba(255, 255, 255, 0.75); }
+.dCol p.warn { color: #ff9b9b; }
+.dCol p.dim { color: rgba(255, 255, 255, 0.4); }
+.dRow { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 2px solid rgba(255, 255, 255, 0.05); font-size: 20px; }
+.dRow span { color: rgba(255, 255, 255, 0.55); white-space: nowrap; margin-right: 14px; }
+.dRow b { font-weight: 400; text-align: right; }
+.dHours { display: flex; flex-wrap: wrap; }
+.dHours i { width: 172px; margin: 0 8px 8px 0; padding: 7px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.06); font-style: normal; font-size: 19px; color: rgba(255, 255, 255, 0.65); }
+.dHours i b { color: #fff; font-weight: 500; }
+.hItem { display: flex; padding: 8px 0; border-bottom: 2px solid rgba(255, 255, 255, 0.05); font-size: 19px; line-height: 1.4; }
+.hItem b { width: 64px; flex-shrink: 0; color: #ffd479; font-weight: 500; }
+.hItem span { color: rgba(255, 255, 255, 0.8); }
+.dHint { position: absolute; left: 96px; bottom: 40px; color: rgba(255, 255, 255, 0.35); font-size: 18px; }
+
+#calMonth { position: absolute; left: 820px; top: 64px; width: 1012px; }
+#calHead { display: flex; align-items: baseline; justify-content: space-between; }
+#calTitle { font-size: 52px; font-weight: 300; }
+#calHint { color: rgba(255, 255, 255, 0.4); font-size: 18px; }
+#calDow { display: flex; margin-top: 24px; }
+#calDow span { width: 144px; text-align: center; color: rgba(255, 255, 255, 0.5); font-size: 20px; letter-spacing: 0.1em; }
+#calDow span.we { color: rgba(255, 140, 120, 0.8); }
+#calGrid { display: flex; flex-wrap: wrap; width: 1008px; margin-top: 12px; }
+.cell { position: relative; width: 136px; height: 104px; margin: 0 8px 8px 0; padding: 12px 0 0 16px; border-radius: 22px; background: rgba(255, 255, 255, 0.04); }
+.cell b { display: block; font-size: 36px; font-weight: 300; line-height: 1; }
+.cell i { display: block; margin-top: 10px; font-style: normal; font-size: 19px; color: rgba(255, 255, 255, 0.45); }
+.cell.we b { color: #ff9c8a; }
+.cell.out { opacity: 0.3; }
+.cell.ev i { color: #ffd479; }
+.cell u { position: absolute; right: 14px; top: 16px; width: 10px; height: 10px; border-radius: 5px; background: #ffd479; }
+.cell.moon u { background: rgba(255, 255, 255, 0.6); }
+.cell.today { box-shadow: inset 0 0 0 2px #ffd479; }
+.cell.sel { background: rgba(255, 255, 255, 0.95); }
+.cell.sel b, .cell.sel.we b { color: #000; }
+.cell.sel i { color: rgba(0, 0, 0, 0.6); }
+#calEvents { display: flex; flex-wrap: wrap; width: 1008px; height: 116px; overflow: hidden; margin-top: 14px; }
+#calEvents span { margin: 0 10px 10px 0; padding: 8px 16px; border-radius: 16px; background: rgba(255, 255, 255, 0.05); font-size: 19px; color: rgba(255, 255, 255, 0.75); white-space: nowrap; }
+#calEvents span b { color: #ffd479; font-weight: 500; }
+#calEvents span.on { background: rgba(255, 212, 121, 0.2); }
+
+/* ---- Khung ảnh (photo frame / screensaver) --------------------------------------------------- */
+
+#frame { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; z-index: 8; background: #000; animation: fadeIn 900ms ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.photo {
+  position: absolute;
+  top: 0; left: 0; width: 1920px; height: 1080px;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 1500ms ease;
+}
+.photo.shown { opacity: 1; }
+/* No Ken Burns zoom: animating a full-screen photo leaves black tiles on the TU8500's GPU. */
+
+#frameShade {
+  position: absolute;
+  top: 0; left: 0; width: 1920px; height: 1080px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 45%, rgba(0, 0, 0, 0.62) 100%);
+}
+
+#frameBlock { position: absolute; left: 120px; bottom: 100px; transition: transform 20s ease-in-out; }
+#frClock { font-size: 180px; font-weight: 200; letter-spacing: -0.05em; line-height: 1; text-shadow: 0 6px 40px rgba(0, 0, 0, 0.35); }
+#frDate { margin-top: 10px; font-size: 32px; font-weight: 300; letter-spacing: 0.06em; color: rgba(255, 255, 255, 0.88); }
+#frWeather { display: flex; align-items: center; margin-top: 18px; font-size: 26px; font-weight: 300; color: rgba(255, 255, 255, 0.8); }
+#frWeather svg { width: 42px; height: 42px; margin-right: 12px; fill: none; color: #fff; }
+#frWeather i { width: 14px; height: 14px; border-radius: 7px; margin: 0 10px 0 26px; }
+#frCaption {
+  position: absolute; right: 120px; bottom: 104px; width: 720px; text-align: right;
+  font-size: 22px; font-weight: 300; color: rgba(255, 255, 255, 0.7); text-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
+}
+#nightDim { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; background: #000; opacity: 0; transition: opacity 3s ease; pointer-events: none; }
+#frame.night #nightDim { opacity: 0.55; }
+
+/* ---- toast ----------------------------------------------------------------------------------- */
+
+#toast {
+  position: absolute;
+  left: 50%;
+  bottom: 80px;
+  padding: 20px 40px;
+  border-radius: 40px;
+  background: rgba(40, 40, 44, 0.95);
+  font-size: 26px;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(-50%);
+  transition: opacity 200ms ease;
+  z-index: 9;
+}
+
+#toast.shown { opacity: 1; }

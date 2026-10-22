@@ -1,0 +1,6 @@
+dist/
+tools/.venv/
+tools/.cache/
+tools/.tv-token
+.playwright-mcp/
+.DS_Store

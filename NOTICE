@@ -1,0 +1,13 @@
+Nhà Mình includes or derives from:
+
+- cleanyourtv launcher design — MIT, Copyright (c) 2026 Gathin — https://github.com/Gathin23/cleanyourtv
+- webos-vibehack (HTML/JS port of the launcher) — MIT, Copyright (c) 2026 Gathin, OmkarK97
+  https://github.com/OmkarK97/webos-vibehack
+- B1ackha7TV (Tizen app list / input switching approach) — MIT — https://github.com/djwalks/B1ackha7TV
+- 2048 — MIT, Copyright (c) 2014 Gabriele Cirulli — app/games/2048/LICENSE.txt
+- javascript-tetris, javascript-snakes, javascript-breakout — MIT, Copyright (c) 2011–2016 Jake Gordon
+  — app/games/{xep-gach,ran-san-moi,pha-gach}/LICENSE
+- Lexend font — SIL Open Font License 1.1 — app/fonts/OFL-Lexend.txt
+- Lunar calendar algorithm after Hồ Ngọc Đức (https://www.informatik.uni-leipzig.de/~duc/amlich/)
+- Data: Bing Image of the Day, Wikimedia Commons featured pictures, Open-Meteo (weather, air quality).
+- App icons in app/icons/ are the apps' own store artwork, shown only to launch those apps on this TV.

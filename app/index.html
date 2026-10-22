@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <title>Nhà Mình</title>
+  <link rel="stylesheet" href="css/home.css">
+</head>
+<body>
+  <!-- Wallpaper: today's photo, darkened so the dock and the clock always read. -->
+  <canvas id="wallA" class="wall" width="1920" height="1080"></canvas>
+  <canvas id="wallB" class="wall" width="1920" height="1080"></canvas>
+  <div id="wallDim"></div>
+
+  <!-- Ambient glow in the colour of the focused tile; two layers so colours crossfade. -->
+  <div id="ambientA" class="ambient"></div>
+  <div id="ambientB" class="ambient"></div>
+
+  <!-- Top shelf: the focused dock app's name, above the dock. -->
+  <div id="hero"></div>
+  <div id="heroSub"></div>
+
+  <!-- Top shelf: the focused dock app's content (YouTube videos), above the dock. -->
+  <div id="shelfRow"><div class="srTitle"></div><div class="srViewport"><div class="srCards"></div></div></div>
+
+  <!-- Tin mới: headlines on the left, the selected story on the right. -->
+  <div id="newsView" class="hidden"><div class="nvHead">Tin mới</div><div id="nvList"></div><div id="nvStory"></div></div>
+
+  <!-- "Hôm nay": on this day, a saying, the latest news — one at a time, in the free space on the left. -->
+  <div id="today"><div class="tdLabel"></div><div class="tdText"></div><div class="tdMeta"></div></div>
+
+  <!-- Below the dock: the focused tile's name and what it is, at the top of the screen. -->
+  <div id="shelf"><div class="shelfTitle"></div><div class="shelfDesc"></div></div>
+
+  <!-- Weather and air quality, always in view above the dock (no need to open anything). -->
+  <div id="wxWidget" class="hidden">
+    <div class="wxNow">
+      <div id="wxIcon"></div>
+      <div id="wxTemp"></div>
+      <div class="wxText"><div id="wxDesc"></div><div id="wxMeta"></div></div>
+    </div>
+    <div id="wxAir"></div>
+    <div id="wxDays"></div>
+  </div>
+
+  <header>
+    <div id="leftBlock">
+      <div id="greeting"></div>
+      <div id="timeRow">
+        <span id="clock"></span><span id="ampm"></span><span class="divider"></span>
+        <div id="date"><div id="dateLine"></div><div id="lunarLine"></div><div id="statsLine"></div></div>
+      </div>
+      <div id="eventsRow"></div>
+    </div>
+    <div id="topButtons">
+      <div class="pill" id="btnInputs">
+        <svg viewBox="0 0 24 24"><path d="M18,7V4c0,-1.1 -0.9,-2 -2,-2H8C6.9,2 6,2.9 6,4v3H5v6l3,6v3h8v-3l3,-6V7H18zM8,4h8v3h-2V5h-1v2h-2V5h-1v2H8V4z"/></svg>
+        <span>Nguồn</span>
+      </div>
+      <div class="pill" id="btnCalendar">
+        <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14zm0-12H5V6h14zM7 12h4v4H7z"/></svg>
+        <span>Lịch</span>
+      </div>
+      <div class="pill round" id="btnSettings">
+        <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04,-0.3 0.06,-0.61 0.06,-0.94c0,-0.32 -0.02,-0.64 -0.07,-0.94l2.03,-1.58c0.18,-0.14 0.23,-0.41 0.12,-0.61l-1.92,-3.32c-0.12,-0.22 -0.37,-0.29 -0.59,-0.22l-2.39,0.96c-0.5,-0.38 -1.03,-0.7 -1.62,-0.94L14.4,2.81c-0.04,-0.24 -0.24,-0.41 -0.48,-0.41h-3.84c-0.24,0 -0.43,0.17 -0.47,0.41L9.25,5.35C8.66,5.59 8.12,5.92 7.63,6.29L5.24,5.33c-0.22,-0.08 -0.47,0 -0.59,0.22L2.74,8.87C2.62,9.08 2.66,9.34 2.86,9.48l2.03,1.58C4.84,11.36 4.8,11.69 4.8,12s0.02,0.64 0.07,0.94l-2.03,1.58c-0.18,0.14 -0.23,0.41 -0.12,0.61l1.92,3.32c0.12,0.22 0.37,0.29 0.59,0.22l2.39,-0.96c0.5,0.38 1.03,0.7 1.62,0.94l0.36,2.54c0.05,0.24 0.24,0.41 0.48,0.41h3.84c0.24,0 0.44,-0.17 0.47,-0.41l0.36,-2.54c0.59,-0.24 1.13,-0.56 1.62,-0.94l2.39,0.96c0.22,0.08 0.47,0 0.59,-0.22l1.92,-3.32c0.12,-0.22 0.07,-0.47 -0.12,-0.61L19.14,12.94zM12,15.6c-1.98,0 -3.6,-1.62 -3.6,-3.6s1.62,-3.6 3.6,-3.6s3.6,1.62 3.6,3.6S13.98,15.6 12,15.6z"/></svg>
+      </div>
+      <div class="avatar" id="btnFamily"></div>
+    </div>
+  </header>
+
+  <!-- Everything below the header scrolls together: dock band, tiles and the glass highlight. -->
+  <div id="viewport">
+    <div id="stage">
+      <div id="dockBand"></div>
+      <div id="tiles"></div>
+      <div id="glass"></div>
+    </div>
+  </div>
+
+  <!-- Dropdowns under the pills, and the settings sheet. -->
+  <div id="inputsPanel" class="panel hidden"></div>
+  <div id="settings" class="hidden">
+    <div class="sheetHead"><span id="settingsBack">‹</span><span id="settingsTitle">Cài đặt</span></div>
+    <div id="settingsList"></div>
+  </div>
+
+  <!-- Khung ảnh: the photo of the day with a drifting clock (also the screensaver). -->
+  <div id="frame" class="hidden">
+    <div id="photoA" class="photo"></div>
+    <div id="photoB" class="photo"></div>
+    <div id="frameShade"></div>
+    <div id="frameBlock">
+      <div id="frClock"></div>
+      <div id="frDate"></div>
+      <div id="frWeather"></div>
+      <div id="frEvents"></div>
+      <div id="frQuote"></div>
+    </div>
+    <div id="frCaption"></div>
+    <div id="nightDim"></div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script src="$WEBAPIS/webapis/webapis.js"></script>
+  <script src="config.js"></script>
+  <script src="js/apps.js"></script>
+  <script src="js/lunar.js"></script>
+  <script src="js/events.js"></script>
+  <script src="js/platform.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/backdrop.js"></script>
+  <script src="js/weather.js"></script>
+  <script src="js/games.js"></script>
+  <script src="js/almanac.js"></script>
+  <script src="js/history.js"></script>
+  <script src="js/quotes.js"></script>
+  <script src="js/news.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/shelf.js"></script>
+  <script src="js/home.js"></script>
+</body>
+</html>

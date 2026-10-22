@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" id="http://nhaminh.local/home" version="1.1.0" viewmodes="maximized">
+    <tizen:application id="NhaMinh000.NhaMinh" package="NhaMinh000" required_version="2.3"/>
+    <content src="index.html"/>
+    <!-- Opened again while running (the watch service, Smart Hub): resume the page instead of reloading it. -->
+    <tizen:app-control>
+        <tizen:src name="index.html" reload="disable"/>
+        <tizen:operation name="http://tizen.org/appcontrol/operation/default"/>
+    </tizen:app-control>
+    <feature name="http://tizen.org/feature/screen.size.normal.1080.1920"/>
+    <feature name="http://tizen.org/feature/web.service"/>
+    <icon src="icon-home.png"/>
+    <name>Nhà Mình</name>
+    <tizen:profile name="tv-samsung"/>
+    <access origin="*" subdomains="true"/>
+    <tizen:privilege name="http://tizen.org/privilege/internet"/>
+    <tizen:privilege name="http://tizen.org/privilege/application.launch"/>
+    <tizen:privilege name="http://tizen.org/privilege/application.info"/>
+    <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>
+    <tizen:privilege name="http://tizen.org/privilege/tv.window"/>
+    <tizen:privilege name="http://tizen.org/privilege/filesystem.read"/>
+    <tizen:privilege name="http://developer.samsung.com/privilege/network.public"/>
+    <!-- Background service: brings the home screen back when an app opened from it is closed. -->
+    <tizen:service id="NhaMinh000.WatchService">
+        <tizen:content src="service/watch.js"/>
+        <tizen:name>NhaWatch</tizen:name>
+        <tizen:description>Quay về màn hình chính khi thoát app</tizen:description>
+    </tizen:service>
+    <tizen:setting screen-orientation="landscape" context-menu="disable" background-support="disable" encryption="disable" install-location="auto" hwkey-event="enable"/>
+    <tizen:metadata key="http://tizen.org/metadata/app_ui_type/base_screen_resolution" value="extensive"/>
+</widget>
