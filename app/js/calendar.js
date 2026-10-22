@@ -197,9 +197,15 @@
       }).join('');
   }
 
+  var prefetchTimer = null;
+
   function move(days) {
     sel = new Date(sel.getFullYear(), sel.getMonth(), sel.getDate() + days);
     render();
+    // Resting on a day for a moment fetches its "ngày này năm xưa", so OK opens Xem ngày already filled in.
+    clearTimeout(prefetchTimer);
+    var d = sel;
+    prefetchTimer = setTimeout(function () { History.prefetch(d); }, 700);
   }
 
   function shiftMonth(n) {

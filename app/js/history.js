@@ -13,6 +13,21 @@
 
   var CACHE = 'history2.';
   var MIN_ITEMS = 10;
+  var KEEP_MS = 60 * 86400000, PER_DAY = 30, DAYS_KEPT = 60;   // what happened on 22/10 hardly changes
+
+  /** Store one day, dropping the least recently stored days beyond DAYS_KEPT (~4 KB each). */
+  function store(key, items) {
+    Platform.store.set(key, { at: Date.now(), items: items.slice(0, PER_DAY) });
+    try {
+      var days = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k.indexOf('nhaminh.' + CACHE) === 0) days.push({ k: k, at: (JSON.parse(localStorage.getItem(k)) || {}).at || 0 });
+      }
+      days.sort(function (a, b) { return b.at - a.at; });
+      days.slice(DAYS_KEPT).forEach(function (d) { localStorage.removeItem(d.k); });
+    } catch (e) { /* no storage */ }
+  }
 
   /** Wiki markup → plain text: [[a|b]] → b, [[a]] → a, no refs, templates, bold or italics. */
   function clean(s) {
@@ -80,7 +95,7 @@
   function load(date, cb) {
     var key = CACHE + (date.getMonth() + 1) + '-' + date.getDate();
     var cached = Platform.store.get(key, null);
-    if (cached && cached.items && cached.items.length && Date.now() - cached.at < 7 * 86400000) return cb(cached.items);
+    if (cached && cached.items && cached.items.length && Date.now() - cached.at < KEEP_MS) return cb(cached.items);
     var page = date.getDate() + '_tháng_' + (date.getMonth() + 1);
     var url = 'https://vi.wikipedia.org/w/api.php?action=parse&prop=wikitext&format=json&formatversion=2&origin=*&page=' +
       encodeURIComponent(page);
@@ -88,7 +103,7 @@
       var items = !err && data && data.parse ? parse(data.parse.wikitext || '') : [];
       function done(all) {
         all.sort(function (a, b) { return b.year - a.year; });
-        if (all.length) Platform.store.set(key, { at: Date.now(), items: all });
+        if (all.length) store(key, all);
         cb(all.length ? all : (cached ? cached.items : []));
       }
       if (items.filter(function (i) { return i.kind === 'event'; }).length >= MIN_ITEMS) return done(items);
@@ -101,5 +116,8 @@
     }, 15000);
   }
 
-  root.History = { load: load, parse: parse, clean: clean, translate: translate, GRIM: GRIM };
+  /** Fetch a day ahead of time (calendar cursor, tomorrow), quietly. */
+  function prefetch(date) { load(date, function () {}); }
+
+  root.History = { load: load, prefetch: prefetch, parse: parse, clean: clean, translate: translate, GRIM: GRIM };
 })(this);

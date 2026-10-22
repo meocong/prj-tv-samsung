@@ -85,3 +85,11 @@ test('photo library: one entry per photo across Bing markets, newest kept, no CJ
   assert.equal(capped.length, 120);
   assert.ok(capped[0].date >= capped[119].date);
 });
+
+test('quotes store: today\'s sayings go first, repeats kept once, capped', () => {
+  const day1 = [{ text: 'A', by: 'x' }, { text: 'B', by: 'y' }];
+  const day2 = [{ text: 'C', by: 'z' }, { text: 'A', by: 'x' }];
+  assert.deepEqual(Quotes.addToStore(day2, day1).map((q) => q.text), ['C', 'A', 'B']);
+  const many = Array.from({ length: 700 }, (_, i) => ({ text: 'q' + i, by: '' }));
+  assert.equal(Quotes.addToStore(many, []).length, 600);
+});

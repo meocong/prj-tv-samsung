@@ -509,16 +509,18 @@
     $('newsView').classList.remove('hidden');
     $('nvList').innerHTML = '<p class="dim" style="font-size:24px;color:rgba(255,255,255,.5)">Đang tải tin…</p>';
     $('nvStory').innerHTML = '';
-    News.load(function (list) {
+    News.load(function (list) {   // stored stories first, then the fresh ones
+      var keep = newsList[newsFocus] && newsList[newsFocus].title;
       newsList = list;
       newsFocus = 0;
+      list.forEach(function (n, i) { if (n.title === keep) newsFocus = i; });
       if (zone !== 'news') return;
       if (!list.length) { $('nvList').innerHTML = '<p style="font-size:24px">Chưa tải được tin, kiểm tra mạng.</p>'; return; }
       $('nvList').innerHTML = list.map(function (n) {
         return '<div class="nvItem">' + (n.image ? '<img src="' + esc(n.image) + '">' : '<i></i>') + '<div><b>' + esc(n.title) + '</b><span>' + esc(n.source) +
           '  ·  ' + esc(News.ago(n.time)) + '</span></div></div>';
       }).join('');
-      focusNews(0);
+      focusNews(newsFocus);
     });
   }
 
@@ -1594,6 +1596,10 @@
   applyVisibility();
   applyWallpaper();
   setTimeout(refreshToday, 1500);   // after the first paint
+  setTimeout(function () {          // later still: the YouTube row and tomorrow's "ngày này năm xưa"
+    idle(function () { Shelf.warm(); History.prefetch(new Date(Date.now() + 86400000)); });
+  }, 8000);
+  setInterval(function () { if (!document.hidden) Shelf.warm(); }, 60 * 60000);
   loadApps();
   Platform.setTvScreenSaver(true);
   Platform.startService();

@@ -72,13 +72,34 @@
     });
   }
 
-  function youtube(cb) {
-    var cached = cacheGet('yt2.channels');
-    if (cached) return cb({ title: TITLE, cards: cached });
+  var refreshing = false;
+
+  /** Fetch the channels again (in the background); cb(cards) when done. */
+  function refresh(cb) {
+    if (refreshing) return cb && cb(null);
+    refreshing = true;
     channels(function (cards) {
+      refreshing = false;
       if (cards.length) cacheSet('yt2.channels', cards);
-      cb(cards.length ? { title: TITLE, cards: cards } : null);
+      if (cb) cb(cards);
     });
+  }
+
+  /** The stored videos come up at once; when they are over an hour old, new ones are fetched for next time. */
+  function youtube(cb) {
+    var c = Platform.store.get('shelf.yt2.channels', null);
+    if (c && c.cards && c.cards.length) {
+      cb({ title: TITLE, cards: c.cards });
+      if (Date.now() - c.at > TTL) refresh();
+      return;
+    }
+    refresh(function (cards) { cb(cards && cards.length ? { title: TITLE, cards: cards } : null); });
+  }
+
+  /** At start and every hour, so the row is ready before anyone stops on YouTube. */
+  function warm() {
+    var c = Platform.store.get('shelf.yt2.channels', null);
+    if (!c || Date.now() - c.at > TTL) refresh();
   }
 
   // ---- API -------------------------------------------------------------------------------------
@@ -100,5 +121,5 @@
     if (card.kind === 'youtube') Platform.launchWithPayload(app.id, 'v=' + card.id + '&t=0', onError, watchIds);
   }
 
-  root.Shelf = { content: content, open: open, isYouTube: isYouTube };
+  root.Shelf = { content: content, open: open, isYouTube: isYouTube, warm: warm };
 })(this);

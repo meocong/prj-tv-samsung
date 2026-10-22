@@ -6,6 +6,7 @@
   'use strict';
 
   var CACHE_KEY = 'weather.last';
+  var BY_PLACE = 'weather.places';   // {"lat,lon": data} for every place picked in Cài đặt
   var REFRESH_MS = 20 * 60 * 1000;
 
   // WMO weather codes → [mô tả, biểu tượng]
@@ -84,6 +85,9 @@
       var data = shape(result.forecast, result.air);
       data.loc = locKey;
       Platform.store.set(CACHE_KEY, data);
+      var places = Platform.store.get(BY_PLACE, {}) || {};
+      places[locKey] = data;
+      Platform.store.set(BY_PLACE, places);
       cb(data);
     }
     Platform.getJSON(forecastUrl, function (err, d) { if (!err) result.forecast = d; done(); });
@@ -129,6 +133,8 @@
     if (cached && cached.loc === key(getLoc())) cb(cached);
     function tick() {
       var loc = getLoc();
+      var stored = (Platform.store.get(BY_PLACE, {}) || {})[key(loc)];
+      if (stored) cb(stored);   // the forecast we had for this place, until the new one arrives
       fetchAll(loc, function (data) {
         if (data && (data.loc === key(loc) || !data.loc)) cb(data);
       }, key(loc));

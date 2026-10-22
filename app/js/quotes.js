@@ -2,8 +2,9 @@
  * Câu nói hay: tục ngữ, ca dao và danh ngôn, mỗi lần hiện một câu khác.
  *
  * Có sẵn ~130 câu chọn lọc (chạy cả khi mất mạng). Mỗi ngày tải thêm:
- *   - 50 danh ngôn mới của ZenQuotes (zenquotes.io, miễn phí, ghi nguồn), dịch sang tiếng Việt;
- *   - ~400 câu tục ngữ của trang "Tục ngữ Việt Nam" trên Wikiquote tiếng Việt.
+ *   - 50 danh ngôn mới của ZenQuotes (zenquotes.io, miễn phí, ghi nguồn), dịch sang tiếng Việt, cộng dồn vào kho
+ *     trên TV (tối đa ZEN_MAX câu, câu cũ nhất rơi ra), nên càng dùng càng nhiều câu;
+ *   - ~130 câu tục ngữ của trang "Tục ngữ Việt Nam" trên Wikiquote tiếng Việt, làm mới mỗi tuần.
  *
  *   Quotes.load(cb)        tải nguồn trực tuyến (cache theo ngày), cb() khi xong
  *   Quotes.next()          câu kế tiếp: xen kẽ danh ngôn mới, câu chọn lọc và tục ngữ -> {text, by}
@@ -163,6 +164,7 @@
   // ---- online, refreshed daily -------------------------------------------------------------------
 
   var CACHE = 'quotes.live';
+  var ZEN_MAX = 600, PROVERBS_EVERY = 7 * 86400000;
   var live = { zen: [], proverbs: [] }, order = null, cursor = 0;
 
   /** Wikiquote wikitext → proverbs: one-line bullets, no variants ("a/b", "(…)"), links or headings. */
@@ -240,25 +242,39 @@
     }, 15000);
   }
 
+  /** Today's sayings go in front of the stored ones; the same saying twice is kept once. */
+  function addToStore(fresh, old) {
+    var seen = {}, out = [];
+    fresh.concat(old || []).forEach(function (q) {
+      if (seen[q.text]) return;
+      seen[q.text] = true;
+      out.push(q);
+    });
+    return out.slice(0, ZEN_MAX);
+  }
+
   function load(cb) {
     cb = cb || function () {};
     var today = dayKey(new Date()), cached = Platform.store.get(CACHE, null);
-    if (cached && (cached.zen.length || cached.proverbs.length)) { live = cached; order = null; }
+    if (cached && ((cached.zen || []).length || (cached.proverbs || []).length)) { live = cached; order = null; }
     if (cached && cached.day === today) return cb();
-    var got = { day: today, zen: [], proverbs: [] }, left = 2;
+    var got = { day: today, zen: cached ? cached.zen || [] : [], proverbs: cached ? cached.proverbs || [] : [],
+      proverbsAt: cached ? cached.proverbsAt || 0 : 0 };
+    var left = 1;
     function done() {
       if (--left) return;
-      if (!got.zen.length && cached) got.zen = cached.zen;            // offline today: keep yesterday's
-      if (!got.proverbs.length && cached) got.proverbs = cached.proverbs;
       live = got;
       order = null;
       if (got.zen.length || got.proverbs.length) Platform.store.set(CACHE, got);
       cb();
     }
-    zenQuotes(function (l) { got.zen = l; done(); });
-    proverbs(function (l) { got.proverbs = l; done(); });
+    zenQuotes(function (l) { got.zen = addToStore(l, got.zen); done(); });   // offline: the store stays as it is
+    if (!got.proverbs.length || Date.now() - got.proverbsAt > PROVERBS_EVERY) {
+      left++;
+      proverbs(function (l) { if (l.length) { got.proverbs = l; got.proverbsAt = Date.now(); } done(); });
+    }
   }
 
-  root.Quotes = { today: today, at: at, count: Q.length, next: next, load: load, parseProverbs: parseProverbs,
+  root.Quotes = { today: today, at: at, count: Q.length, next: next, load: load, parseProverbs: parseProverbs, addToStore: addToStore,
     size: function () { if (!order) buildOrder(); return order.length; } };
 })(this);

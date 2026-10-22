@@ -51,9 +51,15 @@
     return out;
   }
 
+  /**
+   * cb(items) with the stored stories at once; when they are older than TTL, cb runs a second time with the new
+   * ones. Callers simply render twice.
+   */
   function load(cb) {
     var cached = Platform.store.get(CACHE, null);
-    if (cached && Date.now() - cached.at < TTL && cached.items.length) return cb(cached.items);
+    var have = cached && cached.items && cached.items.length;
+    if (have) cb(cached.items);
+    if (have && Date.now() - cached.at < TTL) return;
     var all = [], pending = FEEDS.length;   // 13 stories each, so every paper makes the 40
     FEEDS.forEach(function (f) {
       getText(f[1], function (xml) {
@@ -61,7 +67,8 @@
         if (--pending) return;
         all.sort(function (a, b) { return b.time - a.time; });
         if (all.length) Platform.store.set(CACHE, { at: Date.now(), items: all.slice(0, 40) });
-        cb(all.length ? all : (cached ? cached.items : []));
+        if (all.length) cb(all.slice(0, 40));
+        else if (!have) cb([]);   // offline and nothing stored
       });
     });
   }
