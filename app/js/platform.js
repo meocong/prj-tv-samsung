@@ -109,7 +109,8 @@
     var called = false;
     function finish() { if (!called) { called = true; if (done) done(); } }
     try {
-      var data = [];
+      // Every message carries the TV's apps (most used first), so the service can also watch apps opened elsewhere.
+      var data = [new tizen.ApplicationControlData('apps', (root.TV_APPS || []).map(function (a) { return a.storeId || a.id; }))];
       if (launchedIds) {
         data.push(new tizen.ApplicationControlData('launched', launchedIds.filter(Boolean)));
         // The other apps on the home screen: if one of them is in front, the user moved on by themselves.

@@ -145,11 +145,12 @@ body.scrolled #today { opacity: 0 !important; transform: translateY(-40px); }
   transition: opacity 260ms ease, transform 320ms cubic-bezier(0.25, 0.8, 0.3, 1);
   pointer-events: none;
   z-index: 2;
+  will-change: transform, opacity;   /* its own layer: showing or hiding it never repaints the cards */
 }
 body.shelfOpen #shelfRow { opacity: 1; transform: none; }
 body.shelfOpen #today, body.shelfOpen #wxWidget, body.shelfOpen #hero, body.shelfOpen #heroSub { opacity: 0 !important; }
 body.scrolled #shelfRow { opacity: 0; transition: none; }   /* gone at once: the dock slides up through it */
-.srTitle { margin: 0 0 16px 4px; font-size: 24px; font-weight: 500; text-shadow: 0 1px 10px rgba(0, 0, 0, 0.8); }
+.srTitle { margin: 0 0 16px 4px; font-size: 24px; font-weight: 500; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); }
 .srTitle span { color: rgba(255, 255, 255, 0.78); font-weight: 400; }
 .srSrc:before { content: '·'; margin: 0 14px; }
 .srTitle .srHint { margin-left: 28px; font-size: 18px; color: rgba(255, 255, 255, 0.6); }
@@ -164,9 +165,9 @@ body.scrolled #shelfRow { opacity: 0; transition: none; }   /* gone at once: the
 }
 .srImg img { width: 316px; height: 178px; display: block; }
 .srCard.focused .srImg { transform: scale(1.07); box-shadow: 0 0 0 4px #fff, 0 18px 40px rgba(0, 0, 0, 0.5); }
-.srText { margin-top: 14px; font-size: 19px; line-height: 1.35; max-height: 52px; overflow: hidden; color: rgba(255, 255, 255, 0.92); text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6); }
+.srText { margin-top: 14px; font-size: 19px; line-height: 1.35; max-height: 52px; overflow: hidden; color: rgba(255, 255, 255, 0.92); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); }   /* blurred shadows cost the TV a lot to paint */
 .srCard.focused .srText { color: #fff; }
-.srMeta { margin-top: 4px; font-size: 16px; color: rgba(255, 255, 255, 0.66); text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.srMeta { margin-top: 4px; font-size: 16px; color: rgba(255, 255, 255, 0.66); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ---- Tin mới ----------------------------------------------------------------------------------- */
 
@@ -775,3 +776,7 @@ b.x, .dRow b.x { color: #ff9b9b; }
   background: rgba(0, 0, 0, 0.6); color: #fff; }
 #glMenu { position: absolute; left: 610px; top: 380px; width: 700px; padding: 28px 24px; border-radius: 36px;
   background: #2a2a2e; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+
+/* Blocks that fade when the YouTube row opens or the grid scrolls keep their own layer: without it the TV
+   re-painted them on every fade (84–161 ms of frozen keys at the YouTube tile; 54 ms once, with). */
+#today, #wxWidget, #hero, #heroSub, #wallDim, header { will-change: opacity, transform; }

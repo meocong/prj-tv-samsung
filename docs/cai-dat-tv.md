@@ -94,6 +94,11 @@ App được cài qua Developer Mode. Muốn sửa, thêm tính năng hay đổi
 
 - **Nút Home** trên remote vẫn mở thanh Home của Samsung (không app nào thay được). Thoát app thì dịch vụ nền
   đưa về màn hình chính: VieON, VTV GO khoảng 1–2 giây, Netflix khoảng 3 giây (Netflix ẩn chứ không tắt).
+  Dịch vụ canh cả app mở từ Smart Hub hay do TV tự mở lại sau khi bật (dò vài giây một lần), và lúc TV sắp tắt
+  thì đưa màn hình chính lên trước để lần bật sau vào thẳng đây.
+- Samsung không cho app tự cài chạy khi TV khởi động (on-boot chỉ dành cho chứng chỉ đối tác). Nếu TV tắt hẳn
+  rồi tự mở lại app khác, dịch vụ nền chưa chạy: mở ô màn hình chính một lần là nó chạy lại.
+- Trạng thái dịch vụ nền (để gỡ lỗi): mở `http://192.168.1.7:8701/` trên máy cùng mạng.
 - **YouTube:** nút Back lùi trong YouTube trước rồi hỏi "Thoát YouTube?"; nút **Exit** về thẳng màn hình chính.
 - Hiếm khi TV hết RAM (nhiều app nặng còn chạy ngầm) và tự tắt màn hình chính; khi đó thoát app sẽ ra thanh
   Home của Samsung. Mở lại ô Nhà Mình, hoặc khởi động lại TV (mục 6).

@@ -7,7 +7,12 @@
  * Khi app đã chạy rồi tắt — tức là bạn vừa thoát nó — dịch vụ mở lại màn hình chính. App chỉ ẩn đi chứ
  * không tắt khi thoát (Netflix…) cũng tính là đã thoát nếu khuất quá 1,2 giây.
  *
- * Chỉ theo dõi app mở từ màn hình chính, nên bấm Source sang HDMI hay mở app từ Smart Hub không bị can thiệp.
+ * Khi không có app nào được mở từ màn hình chính, dịch vụ vẫn dò vài giây một lần xem có app nào của TV đang
+ * hiện không (mở từ Smart Hub, hoặc TV tự mở lại app cuối cùng sau khi bật): thấy thì canh app đó luôn.
+ * Dịch vụ cũng theo dõi trạng thái nguồn của TV: lúc TV sắp tắt, nó đưa màn hình chính lên trước, để lần bật
+ * sau "Tự động chạy ứng dụng cuối cùng" mở màn hình chính chứ không mở app đang xem dở.
+ *
+ * http://<IP TV>:8701/ cho biết dịch vụ chạy từ lúc nào, đang canh app nào và những việc vừa làm (để gỡ lỗi).
  * Cùng cơ chế dịch vụ nền với TizenBrew (config.xml: <tizen:service>, feature web.service).
  */
 var http = require('http');
@@ -18,6 +23,13 @@ var GIVE_UP_MS = 30 * 60 * 1000;   // stop watching an app that never appeared (
 
 var watched = null;   // {ids: [storeId, tizenId], since, seenRunning}
 var timer = null;
+var known = [];       // store ids of the TV's apps, most used first (sent by the home screen when it starts)
+var started = Date.now(), log = [];
+
+function note(what) {
+  log.push(new Date().toTimeString().slice(0, 8) + ' ' + what);
+  if (log.length > 40) log.shift();
+}
 
 function status(id, cb) {
   var done = false;
@@ -59,18 +71,104 @@ function anyVisible(ids, cb) {
   });
 }
 
+function launchHome(why) {
+  note('về màn hình chính: ' + why);
+  try { tizen.application.launch(HOME, function () {}, function () { note('không mở được màn hình chính'); }); } catch (e) { /* nothing to do */ }
+}
+
 function goHome(others) {
   status(HOME, function (me) {
     if (me && me.visible) return;
     anyVisible(others || [], function (busy) {
-      if (busy) return;
-      try { tizen.application.launch(HOME, function () {}, function () {}); } catch (e) { /* nothing to do */ }
+      if (busy) return note('có app khác đang hiện: không can thiệp');
+      launchHome('đã thoát app');
     });
   });
 }
 
+// ---- guard: an app on screen that the home screen did not open --------------------------------
+
+var GUARD_MIN = 3000, GUARD_MAX = 12000, guardEvery = GUARD_MIN, guardAt = 0, guardBusy = false;
+
+/** Every few seconds while nothing is watched: is the home screen up? If not, which app is? */
+function guard() {
+  if (guardBusy || !known.length || Date.now() - guardAt < guardEvery) return;
+  guardAt = Date.now();
+  guardBusy = true;
+  status(HOME, function (me) {
+    if (me && me.visible) { guardEvery = GUARD_MIN; guardBusy = false; return; }   // one request while home is up
+    var i = 0;
+    (function next() {
+      if (watched) { guardBusy = false; return; }
+      if (i >= known.length) {   // nothing of ours in front (HDMI, Smart Hub, another app): look less often
+        guardEvery = Math.min(GUARD_MAX, guardEvery * 2);
+        guardBusy = false;
+        return;
+      }
+      var id = known[i++];
+      status(id, function (s) {
+        if (!s || !s.visible) return next();
+        watched = { ids: [id], since: Date.now(), seenRunning: true, others: known.filter(function (x) { return x !== id; }) };
+        guardEvery = GUARD_MIN;
+        guardBusy = false;
+        note('canh ' + (s.name || id) + ' (không mở từ màn hình chính)');
+      });
+    })();
+  });
+}
+
+// ---- power: the TV going to sleep -----------------------------------------------------------------
+
+var POWER_MS = 1500, powerAt = 0, power = 'on';
+
+function powerState(cb) {
+  var done = false;
+  function finish(v) { if (!done) { done = true; cb(v); } }
+  try {
+    var req = http.get({ host: '127.0.0.1', port: 8001, path: '/api/v2/', timeout: 1500 }, function (res) {
+      var body = '';
+      res.on('data', function (d) { body += d; });
+      res.on('end', function () {
+        try { finish((JSON.parse(body).device || {}).PowerState || null); } catch (e) { finish(null); }
+      });
+    });
+    req.on('error', function () { finish(null); });
+    req.on('timeout', function () { req.abort(); finish(null); });
+  } catch (e) { finish(null); }
+}
+
+/** Leaving "on": put the home screen in front now, so the TV starts with it next time. */
+function checkPower() {
+  if (Date.now() - powerAt < POWER_MS) return;
+  powerAt = Date.now();
+  powerState(function (state) {
+    if (!state || state === power) return;
+    note('nguồn: ' + power + ' -> ' + state);
+    var leaving = power === 'on';
+    power = state;
+    if (!leaving) return;
+    watched = null;
+    status(HOME, function (me) { if (!me || !me.visible) launchHome('TV sắp tắt'); });
+  });
+}
+
+// ---- status page for debugging: http://<TV>:8701/ -------------------------------------------------
+
+try {
+  var server = http.createServer(function (req, res) {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
+    res.end(JSON.stringify({
+      since: new Date(started).toString(), power: power, watching: watched ? watched.ids : null,
+      knownApps: known.length, log: log
+    }, null, 1));
+  });
+  server.on('error', function () { /* port taken: no status page */ });
+  server.listen(8701);
+} catch (e) { /* no server support */ }
+
 function tick() {
-  if (!watched) return;
+  checkPower();
+  if (!watched) return guard();
   if (Date.now() - watched.since > GIVE_UP_MS && !watched.seenRunning) { watched = null; return; }
   appState(watched.ids, function (s) {
     if (!watched || !s) return;
@@ -100,6 +198,8 @@ function readRequest() {
         watched = { ids: d.value.filter(Boolean), since: Date.now(), seenRunning: false, others: watched ? watched.others : [] };
       } else if (d.key === 'others' && watched) {
         watched.others = d.value || [];
+      } else if (d.key === 'apps') {
+        known = (d.value || []).filter(function (id) { return id && id !== HOME; });
       } else if (d.key === 'stop') {
         watched = null;
       }
@@ -108,6 +208,7 @@ function readRequest() {
 }
 
 module.exports.onStart = function () {
+  note('dịch vụ bắt đầu');
   readRequest();
   if (!timer) timer = setInterval(tick, POLL_MS);
 };

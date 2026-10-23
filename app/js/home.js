@@ -453,21 +453,37 @@
     topShelf.data = null;
   }
 
+  /**
+   * The cards are built once per list and kept: opening the row again only shows it (painting twelve fresh cards
+   * cost the TV ~150 ms and made keys lag). Thumbnails load only for the cards about to come on screen.
+   */
   function renderTopShelf() {
-    var d = topShelf.data, row = $('shelfRow');
-    row.children[0].innerHTML = esc(itemTitle(topShelf.item)) + '<span class="srSrc">' + esc(d.title) + '</span><span class="srHint">▲  chọn video</span>';
-    var strip = row.querySelector('.srCards');
-    strip.innerHTML = '';
+    var d = topShelf.data, row = $('shelfRow'), strip = row.querySelector('.srCards');
+    var hint = row.querySelector('.srHint');
+    if (hint) hint.textContent = '▲  chọn video';
     strip.style.transform = 'none';
-    d.cards.forEach(function (c) {
+    var key = itemTitle(topShelf.item) + '|' + d.cards.map(function (c) { return c.id; }).join(',');
+    if (strip.getAttribute('data-key') === key) return;
+    strip.setAttribute('data-key', key);
+    row.children[0].innerHTML = esc(itemTitle(topShelf.item)) + '<span class="srSrc">' + esc(d.title) + '</span><span class="srHint">▲  chọn video</span>';
+    strip.innerHTML = '';
+    d.cards.forEach(function (c, i) {
       var el = document.createElement('div');
       el.className = 'srCard';
       el.innerHTML = '<div class="srImg"><img></div><div class="srText"></div><div class="srMeta"></div>';
-      el.querySelector('img').src = c.image;
+      el.querySelector('img').setAttribute('data-src', c.image);
       el.children[1].textContent = c.title;
       el.children[2].textContent = [c.by, c.when].filter(Boolean).join('  ·  ');
       strip.appendChild(el);
     });
+    loadShelfImages(0);
+  }
+
+  function loadShelfImages(first) {
+    var imgs = $('shelfRow').querySelectorAll('.srCard img');
+    for (var i = first; i < Math.min(imgs.length, first + 6); i++) {
+      if (!imgs[i].src) imgs[i].src = imgs[i].getAttribute('data-src');
+    }
   }
 
   function focusShelfCard(i) {
@@ -477,6 +493,7 @@
     var cards = $('shelfRow').querySelectorAll('.srCard');
     for (var k = 0; k < cards.length; k++) cards[k].classList.toggle('focused', k === topShelf.index);
     var first = Math.max(0, Math.min(topShelf.index - 2, d.cards.length - 5));
+    loadShelfImages(first);
     $('shelfRow').querySelector('.srCards').style.transform = 'translateX(' + (-first * SHELF_PITCH) + 'px)';
   }
 
