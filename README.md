@@ -148,6 +148,10 @@ docs/           cai-dat-tv.md (cài đặt TV, DNS, hạn chế, gỡ bỏ), scr
 tests/          test Node: âm lịch, lịch vạn niên, ngày lễ, nội dung
 ```
 
+## Giấy phép
+
+[MIT](LICENSE) © 2026 Nguyễn Trọng Hoàng Việt. Mã của bên thứ ba giữ giấy phép riêng (xem [NOTICE](NOTICE)).
+
 ## Ghi công
 
 Lấy cảm hứng từ [cleanyourtv](https://github.com/Gathin23/cleanyourtv) (Android TV). Giao diện port từ
