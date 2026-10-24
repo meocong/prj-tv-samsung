@@ -310,7 +310,7 @@ body.scrolled header {
   height: 80px;
   margin-left: 20px;
   border-radius: 40px;
-  background: url('../img/family.jpg') center / cover;
+  background: url('../img/avatar.jpg') center / cover;   /* local/img/avatar.jpg: ảnh của nhà bạn */
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.22);
   transition: transform 200ms ease, box-shadow 200ms ease;
 }

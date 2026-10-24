@@ -1,12 +1,12 @@
-// Cấu hình "Nhà Mình". Phần lớn tùy chọn chỉnh được ngay trên TV (nút Cài đặt, hoặc phím xanh dương);
-// file này là giá trị mặc định. Sửa xong chạy tools/deploy.sh.
+// Cấu hình mặc định. Phần lớn tùy chọn chỉnh được ngay trên TV (nút Cài đặt, hoặc phím xanh dương).
+// Tên nhà, vị trí, ảnh gia đình của riêng bạn: đặt trong local/config.local.js (không lên Git, xem README).
+// Sửa xong chạy tools/deploy.sh.
 window.CONFIG = {
-  familyName: 'Nhà Mình',   // ❤ hiện thành trái tim vẽ bằng SVG
+  familyName: 'Nhà Mình ❤ Gia Đình',   // ❤ hiện thành trái tim vẽ bằng SVG
 
   // Thời tiết và chất lượng không khí (Open-Meteo, không cần API key). Đổi được trong Cài đặt → Thời tiết.
   location: { name: 'Hà Nội (Hoàn Kiếm)', latitude: 21.03, longitude: 105.85, timezone: 'Asia/Bangkok' },
   locations: [
-    { name: 'Hà Nội (Hoàn Kiếm)', latitude: 21.03, longitude: 105.85, timezone: 'Asia/Bangkok' },
     { name: 'Hà Nội (Hoàn Kiếm)', latitude: 21.03, longitude: 105.85, timezone: 'Asia/Bangkok' },
     { name: 'TP. Hồ Chí Minh', latitude: 10.78, longitude: 106.70, timezone: 'Asia/Bangkok' },
     { name: 'Đà Nẵng', latitude: 16.05, longitude: 108.21, timezone: 'Asia/Bangkok' }
@@ -14,7 +14,7 @@ window.CONFIG = {
 
   // Dock (hàng trên cùng): mỗi mục khớp app đầu tiên có tên (không dấu) chứa chuỗi `match`, hoặc đúng `id`.
   // `title` đổi tên hiển thị, `skipIf` bỏ qua mục khi có app khác. App chưa cài thì bỏ qua.
-  // Nhà có YouTube Premium nên dùng YouTube gốc; TizenBrew (TizenTube) nằm cuối danh sách.
+  // YouTube gốc (có YouTube Premium thì không quảng cáo); TizenBrew (TizenTube) nằm cuối danh sách.
   dock: [
     { match: ['vtvgo'], id: 'OxWOiJOOyr.vtv' },      // VTVgo Truyền hình số Quốc gia (bản mới); đứng đầu nên không
     { match: ['youtube'], id: '9Ur5IzDKqV.TizenYouTube' },   // có hàng video che Hôm nay và thời tiết lúc mở TV
@@ -26,8 +26,9 @@ window.CONFIG = {
   hidden: ['e-manual', 'puppy rescue', 'jumpoon', 'tarmac race', 'pink panther'],
   hiddenIds: ['3202106023989'],   // VTVGo 2021, bản cũ trùng với VTVgo mới
 
-  // Ảnh gia đình xen vào màn hình chờ (cứ 3 ảnh đẹp lại có 1 ảnh nhà mình). Thêm ảnh: bỏ file vào app/img/.
-  familyPhotos: ['img/family/01.jpg', 'img/family/02.jpg', 'img/family/03.jpg', 'img/family/04.jpg', 'img/family/05.jpg'],
+  // Ảnh gia đình: xen vào màn hình chờ và hình nền "Ảnh đẹp + ảnh gia đình". Đây là ảnh mẫu; ảnh của bạn thêm bằng
+  // tools/photos.py (ghi vào local/, không lên Git).
+  familyPhotos: ['img/sample/1.jpg', 'img/sample/2.jpg', 'img/sample/3.jpg'],
 
   // Tên riêng cho cổng vào trong bảng Nguồn, ví dụ { 'HDMI 1': 'Đầu thu', 'HDMI 2': 'PS5' }.
   inputNames: {},

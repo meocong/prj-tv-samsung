@@ -3,7 +3,7 @@
 
     tools/.venv/bin/python tools/tv.py info
     tools/.venv/bin/python tools/tv.py apps                 # app đã cài: id, tên, đường dẫn icon
-    tools/.venv/bin/python tools/tv.py sync                 # ghi app/apps.js + app/icons/*.png cho Nhà Mình
+    tools/.venv/bin/python tools/tv.py sync                 # ghi app/apps.js + app/icons/*.png cho màn hình chính
     tools/.venv/bin/python tools/tv.py key KEY_HOME KEY_RIGHT KEY_ENTER
     tools/.venv/bin/python tools/tv.py launch 111299001912
     tools/.venv/bin/python tools/tv.py power                # bật/tắt (KEY_POWER)
@@ -26,7 +26,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 HOST = os.environ.get("TV_HOST", "192.168.1.7")
 TOKEN = os.path.join(HERE, ".tv-token")
-NAME = "NhaMinh"
+NAME_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".tv-name")
+# The name the TV shows when asking to allow this remote; kept per machine so an existing pairing keeps working.
+NAME = open(NAME_FILE, encoding="utf-8").read().strip() if os.path.exists(NAME_FILE) else "NhaMinh"
 
 
 def tv():

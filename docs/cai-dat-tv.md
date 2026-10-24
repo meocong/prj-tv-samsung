@@ -13,13 +13,14 @@ hình chính: **Cài đặt → Cài đặt TV**.
 |---|---|---|
 | ✅ | Tắt theo dõi, quảng cáo, nhận dạng giọng nói | mục 1 |
 | ✅ | DNS `94.140.14.14` | mục 3 |
-| ✅ | Tự động chạy ứng dụng cuối cùng: Bật | mục 2 |
+| ☐ | Tự động chạy ứng dụng cuối cùng: Bật (chỉ có tác dụng khi TV ngủ, xem mục 2) | mục 2 |
+| ☐ | Quy tắc SmartThings "TV bật → mở màn hình chính" (cách chắc chắn nhất) | mục 2 |
 | ✅ | Ghim ô màn hình chính lên đầu thanh Home | mục 2 |
 | ☐ | Tự động chạy Smart Hub: **Tắt** (để Smart Hub không đè lên khi bật TV) | mục 2 |
 | ☐ | **Tự động tắt nguồn: 4 giờ** (màn hình chờ chạy mãi nếu quên tắt TV) | mục 6 |
 | ☐ | Thông báo truy cập: **Chỉ lần đầu** (máy Mac cập nhật app không bị TV hỏi lại) | mục 4 |
-| ☐ | Router chính: **giữ cố định IP** TV `192.168.1.7` và Mac `<IP máy Mac>` (DHCP reservation) | mục 7 |
-| ☐ | Giữ **Developer Mode bật**, Host PC IP = `<IP máy Mac>` | mục 7 |
+| ☐ | Router: **giữ cố định IP** cho TV và máy Mac (DHCP reservation) | mục 7 |
+| ☐ | Giữ **Developer Mode bật**, Host PC IP = IP máy Mac | mục 7 |
 | ☐ | Không bắt buộc: Bật TV bằng điện thoại, ghép tay cầm Bluetooth, AirPlay | mục 4, 7 |
 
 ## 1. Tắt theo dõi và quảng cáo (nhẹ máy nhất)
@@ -33,15 +34,22 @@ hình chính: **Cài đặt → Cài đặt TV**.
 **Tổng quát → Trình quản lý hệ thống → Chế độ sử dụng** (Usage Mode): **Chế độ nhà** (Home Mode).
 Nếu hỏi PIN thì nhập 0000.
 
-## 2. Bật TV là vào thẳng Nhà Mình
+## 2. Bật TV là vào thẳng màn hình chính
 
 **Tổng quát → Tính năng thông minh** (General → Smart Features):
 - **Tự động chạy Smart Hub** (Autorun Smart Hub): **Tắt**.
-- **Tự động chạy ứng dụng cuối cùng** (Autorun Last App): **Bật**. Tắt TV lúc đang ở Nhà Mình thì
-  lần sau bật lên sẽ vào thẳng đây.
+- **Tự động chạy ứng dụng cuối cùng** (Autorun Last App): **Bật**. Lưu ý: Samsung chỉ cho một danh sách app chọn
+  sẵn (YouTube, Netflix…) tự mở lại; app tự cài như màn hình chính này **không** nằm trong danh sách. Nó chỉ giúp khi
+  TV ngủ (Instant On): dịch vụ nền đưa màn hình chính lên trước lúc TV tắt, bật lên là thấy nó.
 - **Tự động chạy Samsung TV Plus** (Autorun Samsung TV Plus): **Tắt**.
 
-Trên thanh Home của Samsung: chọn ô **Nhà Mình** → bấm xuống → **Di chuyển**, đưa về đầu tiên.
+**Bật TV từ trạng thái tắt hẳn mà vẫn vào màn hình chính**: cần một thứ bên ngoài TV ra lệnh mở app khi TV bật. Cách
+gọn nhất là **SmartThings** (chạy trên mây, không cần máy nào bật suốt): thêm TV vào app SmartThings, rồi tạo quy tắc
+"khi TV bật → gửi lệnh `custom.launchapp` / `launchApp` với `NhaMinh000.NhaMinh`". Tạo bằng SmartThings CLI hoặc Rules
+API với một Personal Access Token ([account.smartthings.com/tokens](https://account.smartthings.com/tokens)). Cách khác:
+một máy luôn bật (Raspberry Pi, Home Assistant) thấy TV bật thì gọi `POST http://<IP TV>:8001/api/v2/applications/NhaMinh000.NhaMinh`.
+
+Trên thanh Home của Samsung: chọn ô của app (mặc định **Nhà Mình**) → bấm xuống → **Di chuyển**, đưa về đầu tiên.
 
 ## 3. Chặn quảng cáo, theo dõi bằng DNS
 
@@ -58,8 +66,8 @@ Sau khi đặt, mở thử YouTube, Netflix, FPT Play. Nếu có app không ch�
 - **Cài đặt Chế độ trò chơi → Chế độ trò chơi tự động**: **Bật** (chơi game bớt trễ).
 - **Trình quản lý thiết bị nhập → Danh sách thiết bị Bluetooth**: ghép tay cầm.
 
-**Tổng quát → Cài đặt Apple AirPlay**: **AirPlay: Bật**. iPhone phải ở cùng Wi-Fi (router phụ đã chuyển
-sang chế độ AP nên giờ cả nhà chung một mạng).
+**Tổng quát → Cài đặt Apple AirPlay**: **AirPlay: Bật**. iPhone phải ở cùng mạng với TV (nhà có router phụ thì chuyển nó sang
+chế độ AP để cả nhà chung một mạng).
 
 ## 5. Hình ảnh (theo RTINGS cho dòng TU8000/TU8500)
 
@@ -84,9 +92,8 @@ sang chế độ AP nên giờ cả nhà chung một mạng).
 ## 7. Để máy Mac còn cập nhật được app
 
 App được cài qua Developer Mode. Muốn sửa, thêm tính năng hay đổi ảnh gia đình về sau thì cần:
-- **Developer Mode bật**, **Host PC IP** = IP máy Mac (`<IP máy Mac>`). Kiểm tra: Ứng dụng → bấm `1 2 3 4 5`.
-- **IP cố định**: trên router chính (không phải router phụ, nó đang ở chế độ AP), đặt DHCP reservation cho TV
-  (`192.168.1.7`) và Mac (`<IP máy Mac>`). Nếu IP TV đổi, chạy `TV_HOST=<IP mới> tools/deploy.sh` và Host PC IP trên TV.
+- **Developer Mode bật**, **Host PC IP** = IP máy Mac. Kiểm tra: Ứng dụng → bấm `1 2 3 4 5`.
+- **IP cố định**: trên router chính, đặt DHCP reservation cho TV và máy Mac. Nếu IP TV đổi, chạy `TV_HOST=<IP mới> tools/deploy.sh` và Host PC IP trên TV.
 - Không bắt buộc: **Tổng quát → Mạng → Cài đặt chuyên gia → Bật bằng điện thoại** (Power On with Mobile) để
   `tools/tv.py power` bật TV từ xa.
 
@@ -96,17 +103,19 @@ App được cài qua Developer Mode. Muốn sửa, thêm tính năng hay đổi
   đưa về màn hình chính: VieON, VTV GO khoảng 1–2 giây, Netflix khoảng 3 giây (Netflix ẩn chứ không tắt).
   Dịch vụ canh cả app mở từ Smart Hub hay do TV tự mở lại sau khi bật (dò vài giây một lần), và lúc TV sắp tắt
   thì đưa màn hình chính lên trước để lần bật sau vào thẳng đây.
-- Samsung không cho app tự cài chạy khi TV khởi động (on-boot chỉ dành cho chứng chỉ đối tác). Nếu TV tắt hẳn
-  rồi tự mở lại app khác, dịch vụ nền chưa chạy: mở ô màn hình chính một lần là nó chạy lại.
-- Trạng thái dịch vụ nền (để gỡ lỗi): mở `http://192.168.1.7:8701/` trên máy cùng mạng.
+- Samsung không cho app tự cài chạy khi TV khởi động (on-boot chỉ dành cho chứng chỉ đối tác, prelaunch bị bỏ từ đời
+  2019, Autorun Last App chỉ dành cho app được Samsung cho phép). Nút Home cũng không chiếm được, và chưa có cách root
+  công khai cho Tizen 5.5. Vì vậy sau khi TV tắt hẳn, màn hình chính chỉ tự lên nhờ quy tắc SmartThings ở mục 2; nếu
+  TV tự mở lại app khác, mở ô màn hình chính một lần là dịch vụ nền chạy lại.
+- Trạng thái dịch vụ nền (để gỡ lỗi): mở `http://<IP TV>:8701/` trên máy cùng mạng.
 - **YouTube:** nút Back lùi trong YouTube trước rồi hỏi "Thoát YouTube?"; nút **Exit** về thẳng màn hình chính.
 - Hiếm khi TV hết RAM (nhiều app nặng còn chạy ngầm) và tự tắt màn hình chính; khi đó thoát app sẽ ra thanh
-  Home của Samsung. Mở lại ô Nhà Mình, hoặc khởi động lại TV (mục 6).
+  Home của Samsung. Mở lại ô màn hình chính, hoặc khởi động lại TV (mục 6).
 - Gợi ý, "xem tiếp" của YouTube/Netflix nằm trong từng app, Samsung không cho app khác đọc. Hàng YouTube trên
   dock vì vậy lấy video mới của các kênh Việt chọn sẵn (`youtubeChannels` trong `app/config.js`).
 
 ## Gỡ bỏ toàn bộ
 
-1. Thanh Home → Ứng dụng → ⚙ → **Nhà Mình** → **Xóa** (làm tương tự với TizenBrew).
+1. Thanh Home → Ứng dụng → ⚙ → ô màn hình chính (mặc định **Nhà Mình**) → **Xóa** (làm tương tự với TizenBrew).
 2. Ứng dụng → bấm `1 2 3 4 5` → **Developer mode: Off** → khởi động lại TV.
 3. DNS về **Nhận tự động**.

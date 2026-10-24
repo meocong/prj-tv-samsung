@@ -1,5 +1,5 @@
 /*
- * Dịch vụ nền của Nhà Mình: đưa bạn về màn hình chính khi thoát app đã mở từ đó.
+ * Dịch vụ nền của màn hình chính: đưa bạn về màn hình chính khi thoát app đã mở từ đó.
  *
  * Samsung không cho app tự cài làm nút Home, và khi một app thoát thì TV về Smart Hub. Màn hình chính
  * báo cho dịch vụ này app nào vừa được mở (app-control data "launched"); dịch vụ hỏi TV mỗi 0,3 giây xem
@@ -9,8 +9,9 @@
  *
  * Khi không có app nào được mở từ màn hình chính, dịch vụ vẫn dò vài giây một lần xem có app nào của TV đang
  * hiện không (mở từ Smart Hub, hoặc TV tự mở lại app cuối cùng sau khi bật): thấy thì canh app đó luôn.
- * Dịch vụ cũng theo dõi trạng thái nguồn của TV: lúc TV sắp tắt, nó đưa màn hình chính lên trước, để lần bật
- * sau "Tự động chạy ứng dụng cuối cùng" mở màn hình chính chứ không mở app đang xem dở.
+ * Dịch vụ cũng theo dõi trạng thái nguồn của TV: lúc TV sắp tắt, nó đưa màn hình chính lên trước, để TV chỉ ngủ
+ * (Instant On) thì bật lên là thấy màn hình chính chứ không phải app đang xem dở. (Autorun Last App của Samsung chỉ
+ * dành cho app được cho phép, nên sau khi tắt hẳn thì cần quy tắc SmartThings: xem docs/cai-dat-tv.md.)
  *
  * http://<IP TV>:8701/ cho biết dịch vụ chạy từ lúc nào, đang canh app nào và những việc vừa làm (để gỡ lỗi).
  * Cùng cơ chế dịch vụ nền với TizenBrew (config.xml: <tizen:service>, feature web.service).

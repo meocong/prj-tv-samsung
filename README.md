@@ -1,109 +1,159 @@
-# Nhà Mình: màn hình chính cho TV Samsung
+# Nhà Mình: màn hình chính kiểu Apple TV cho TV Samsung (Tizen)
 
-Màn hình chính kiểu Apple TV cho Samsung UA50TU8500 (2020, Tizen 5.5), lấy cảm hứng từ
-[cleanyourtv](https://github.com/Gathin23/cleanyourtv). Phần giao diện là bản port từ
-[webos-vibehack](https://github.com/OmkarK97/webos-vibehack) (MIT). cleanyourtv chỉ chạy trên Android TV
-(debloat bằng ADB). Trên Tizen không có ADB, không root, cũng không thay được nút Home. Vì vậy app web này
-thay chỗ launcher, còn phần "debloat" làm bằng Cài đặt và DNS (xem [docs/cai-dat-tv.md](docs/cai-dat-tv.md)).
+Một app web thay chỗ màn hình Home cho TV Samsung đời 2020 trở đi (thử trên UA50TU8500, Tizen 5.5). Giao diện kiểu
+Apple TV, có hình nền đẹp đổi theo giờ, thời tiết, lịch vạn niên, tin tức, hàng video YouTube, game chơi bằng remote.
+Thoát app nào cũng quay về đây. Cài bằng Developer Mode, không cần root.
 
-## Có gì
+*An Apple TV–style home screen for Samsung Tizen TVs (2020+), written as a plain web app: rotating photo wallpapers,
+weather and air quality, a Vietnamese lunar almanac, news, a YouTube row, remote-friendly games, and a background
+service that brings you back home when you leave an app. UI text is Vietnamese.*
 
-- **Màn hình chính:**
-  - Dock 4 app: VTV GO, YouTube, Netflix, VieON (phím 1–4 trên remote mở thẳng).
-  - Tên app hiện chữ lớn phía trên; khung kính sáng nhảy giữa các ô.
-  - Giữ OK trên một ô để di chuyển ô đó.
-  - **Hàng YouTube xổ ra:** di chuyển tới ô YouTube và dừng một lát thì video mới của các kênh Việt chọn sẵn hiện phía trên
-    dock (tin tức, giải trí, âm nhạc, thiếu nhi). Bấm ▲ để chọn, OK để mở thẳng video, ▼ để gập lại. Lúc mở TV hay thoát app về, hàng này không tự
-    bật, để khối Hôm nay và thời tiết luôn đọc được. Danh sách
-    kênh nằm trong `youtubeChannels` của [app/config.js](app/config.js). Dùng RSS công khai, không cần API key.
-  - **Tin mới:** ô đầu hàng thứ hai. Mở ra là 40 tin mới nhất từ VnExpress, Thanh Niên, Dân Trí, kèm ảnh và
-    tóm tắt; ▲▼ để chọn, Back để đóng.
-  - **Hôm nay:** xoay vòng *Ngày này năm xưa* (Wikipedia, cả thế giới), *Tin mới* và *Câu nói hay*. Mỗi lượt
-    là một câu nói khác, luân phiên ba nguồn: 50 danh ngôn mới mỗi ngày của [ZenQuotes](https://zenquotes.io)
-    (dịch sang tiếng Việt), ~130 câu chọn sẵn, và tục ngữ của Wikiquote tiếng Việt. Màn hình chờ đổi câu mỗi phút.
-- **Góc trái:**
-  - Lời chào và đồng hồ.
-  - Ngày dương lịch và âm lịch.
-  - Hàng "sắp tới" luôn hiện: Rằm/Mùng 1, ngày lễ hoặc sinh nhật, đếm ngược Tết.
-- **Góc phải:** nút Nguồn vào (HDMI, truyền hình; đặt tên riêng cho cổng bằng `inputNames` trong
-  [app/config.js](app/config.js)), Lịch, Cài đặt, avatar gia đình (bấm vào để mở màn hình chờ).
-- **Widget thời tiết:** nhiệt độ, chất lượng không khí (AQI) kèm lời khuyên, dự báo 4 ngày tại Hà Nội,
-  Hà Nội, và báo "có thể mưa sau ~N phút" khi sắp mưa trong 2 giờ tới. Dữ liệu từ Open-Meteo.
-- **Lịch vạn niên** (nút Lịch): lưới tháng âm dương; OK trên một ngày mở trang *Xem ngày*: can chi, Trực,
-  28 sao, nạp âm, giờ hoàng đạo, giờ xuất hành Lý Thuần Phong, hướng xuất hành, tuổi xung, Bành Tổ, ngày
-  Tam nương/Nguyệt kỵ/Dương công, và ngày này năm xưa.
-- **Hình nền:**
-  - Ảnh Bing của 13 nước (mỗi nước có ảnh riêng mỗi ngày). Kho tự lớn dần tới 120 ảnh: mỗi lần làm mới thêm ảnh
-    mới, ảnh cũ nhất rơi ra.
-  - Tự đổi **mỗi giờ** (chỉnh được 5/15/30 phút, 3 giờ, mỗi ngày). Mốc lần đổi gần nhất được lưu lại: tắt TV một
-    đêm, bật lên là có ảnh mới; chưa tới hạn thì vẫn ảnh cũ. Phím xanh lá: đổi ngay.
-  - **Thư viện hình nền** (Cài đặt → Màn hình chính → Chọn hình nền): lưới ảnh Bing và ảnh gia đình; OK →
-    *Dùng ảnh này* (đến hạn vẫn tự đổi) hoặc *Giữ cố định* (không đổi nữa, chọn *Bỏ cố định* để tự đổi lại).
-  - Mở app là có ảnh ngay: ảnh đang dùng và ảnh kế tiếp được lưu trên TV (IndexedDB, tối đa 30 ảnh ≈ 12 MB, đầy
-    thì xóa ảnh lâu không dùng nhất), kèm một bản 64×36 vẽ từ khung hình đầu tiên.
-  - Hoặc *Ảnh gia đình*, *Kết hợp*, *Bầu trời theo giờ*, nền đen.
-- **Màn hình chờ** sau 3 phút không bấm gì:
-  - Ảnh chuyển mờ dần, xen ảnh gia đình.
-  - Đồng hồ, ngày âm lịch, thời tiết.
-  - Ban đêm tối hơn.
-- **Thoát app là về đây:** một dịch vụ nền ([app/service/watch.js](app/service/watch.js)) theo dõi app vừa mở
-  từ màn hình chính. App đó tắt thì dịch vụ mở lại màn hình chính (thường dưới 1 giây). Với YouTube, Back
-  lùi trong app trước rồi mới hỏi "Thoát YouTube?"; nút Exit trên remote về thẳng.
-- **Game** chơi bằng remote hoặc tay cầm Bluetooth (mã nguồn mở, MIT): Xếp gạch, 2048, Rắn săn mồi, Phá gạch.
-- **Cài đặt** nhiều tầng như Apple TV (nút Cài đặt hoặc phím xanh dương):
-  - Màn hình chờ.
-  - Màn hình chính: hình nền, số ô mỗi hàng 4/5/6, đồng hồ, âm lịch, thời tiết, CPU/bộ nhớ.
-  - Ứng dụng: ẩn/hiện từng app.
-  - Thời tiết: chọn khu vực.
-  - Thông tin TV, số lần mở lại / tải lại màn hình chính.
-  - Cài đặt TV: mở thẳng cài đặt của Samsung (hẹn giờ tắt, hình, tiếng).
+![Màn hình chính](docs/screenshots/home.jpg)
 
-- **Kho dữ liệu trên TV** (mở là hiện ngay; chỉ tải mạng khi đã tới hạn, không tải chỉ vì vừa mở app; có giới hạn để không đầy máy):
+| | |
+|---|---|
+| ![Hàng YouTube](docs/screenshots/youtube.jpg) **Hàng YouTube**: video mới của các kênh chọn sẵn, OK là phát | ![Ứng dụng và game](docs/screenshots/apps-games.jpg) **Ứng dụng và game** |
+| ![Lịch vạn niên](docs/screenshots/calendar.jpg) **Lịch vạn niên** âm dương | ![Xem ngày](docs/screenshots/xem-ngay.jpg) **Xem ngày**: trực, sao, giờ hoàng đạo, hướng xuất hành… |
+| ![Tin mới](docs/screenshots/news.jpg) **Tin mới** từ VnExpress, Thanh Niên, Dân Trí | ![Thư viện hình nền](docs/screenshots/gallery.jpg) **Thư viện hình nền** |
+| ![Cài đặt](docs/screenshots/settings.jpg) **Cài đặt** nhiều tầng | ![Màn hình chờ](docs/screenshots/screensaver.jpg) **Màn hình chờ** |
 
-  | Kho | Giữ | Làm mới |
-  |---|---|---|
-  | Ảnh nền (IndexedDB) | 30 ảnh ≈ 12 MB, xóa ảnh lâu không dùng nhất | ảnh kế tiếp tải sẵn |
-  | Danh sách ảnh Bing | 120 ảnh gần nhất | mỗi ngày một lần |
-  | Câu nói hay | 600 danh ngôn (cộng dồn 50 câu mỗi ngày) + tục ngữ | mỗi ngày / tục ngữ mỗi tuần |
-  | Hàng YouTube | 12 video mới nhất | mỗi giờ |
-  | Tin mới | 40 tin | 20 phút |
-  | Ngày này năm xưa (IndexedDB) | mãi mãi, tối đa 366 trang ngày ≈ 1,5 MB | mỗi ngày tải một lần trong đời; mỗi ngày một lần tải sẵn 7 ngày tới, và ngày đang chọn trên Lịch |
-  | Thời tiết | mỗi nơi đã chọn một bản | khi bản đang có cũ hơn 20 phút |
+*Ảnh chụp từ bản xem thử với cấu hình mẫu. Ảnh nền là ảnh Bing trong ngày.*
 
-## Cập nhật lên TV (từ máy Mac)
+## Tính năng
 
-Cần làm một lần: `tools/setup-mac.sh` (cài Tizen Studio CLI, tạo chứng chỉ ký app).
+- **Dock 4 app** (mặc định VTV GO, YouTube, Netflix, VieON; phím 1–4 mở thẳng), lưới các app còn lại và 4 game. Giữ OK
+  trên một ô để sắp xếp lại.
+- **Hàng YouTube xổ ra**: dừng ở ô YouTube thì video mới của các kênh trong `youtubeChannels` hiện trên dock. ▲ để chọn,
+  OK để phát thẳng video (cả khi YouTube đang mở), ▼ để gập lại. Dùng RSS công khai, không cần API key.
+- **Khối Hôm nay** xoay vòng *Ngày này năm xưa* (Wikipedia), *Tin mới* và *Câu nói hay*: mỗi lượt một câu khác, gồm
+  50 danh ngôn mới mỗi ngày (ZenQuotes, dịch sang tiếng Việt), ~130 câu chọn sẵn và tục ngữ (Wikiquote).
+- **Thời tiết và AQI** (Open-Meteo): nhiệt độ, dự báo 4 ngày, chất lượng không khí kèm lời khuyên, "có thể mưa sau
+  ~N phút".
+- **Sắp tới**: Rằm, Mùng 1, ngày lễ dương và âm lịch, sinh nhật người nhà, đếm ngược Tết.
+- **Lịch vạn niên**: lưới tháng âm dương. OK trên một ngày mở *Xem ngày*: can chi, Trực, 28 sao, nạp âm, giờ hoàng đạo,
+  giờ Lý Thuần Phong, hướng xuất hành, tuổi xung, Bành Tổ, ngày Tam nương/Nguyệt kỵ/Dương công, ngày này năm xưa.
+  Đã đối chiếu với lichvannien.net.
+- **Hình nền**: ảnh Bing của 13 nước, kho tự lớn dần tới 120 ảnh, đổi mỗi giờ (chỉnh được), nhớ mốc lần đổi qua các lần
+  tắt TV. *Thư viện hình nền* để chọn một ảnh dùng tạm hoặc giữ cố định. Có thêm chế độ ảnh gia đình, kết hợp, bầu trời
+  theo giờ, nền đen.
+- **Màn hình chờ** sau 3 phút không bấm gì: ảnh chuyển mờ dần xen ảnh gia đình, đồng hồ, âm lịch, thời tiết, câu nói.
+- **Thoát app là về đây**: dịch vụ nền canh app đang mở (kể cả mở từ Smart Hub) và đưa về màn hình chính, thường dưới
+  1 giây.
+- **Nguồn vào** (HDMI, truyền hình, đặt tên riêng cho cổng), **Cài đặt** nhiều tầng như Apple TV, lối tắt vào cài đặt
+  của TV.
+- **Nhanh và nhẹ trên TV**: mọi thứ lưu sẵn trên TV, mở app không tải mạng, chỉ cập nhật khi tới hạn (xem
+  [Kho dữ liệu](#kho-dữ-liệu-trên-tv)). Chạy trên Chromium 69 của Tizen 5.5, ES2018.
 
-Trên TV, Developer Mode phải bật và **Host PC IP = IP của máy Mac**. Kiểm tra bằng cách mở Ứng dụng, bấm
-`1 2 3 4 5`.
+## Cài đặt
+
+Cần: một máy Mac (Intel hoặc Apple Silicon) cùng mạng với TV, và TV Samsung Tizen (2017 trở đi; thử kỹ trên 2020).
+
+1. **Bật Developer Mode trên TV**: mở *Ứng dụng*, bấm `1 2 3 4 5` trên remote, bật *Developer mode*, nhập **IP máy Mac**
+   vào *Host PC IP*, rồi khởi động lại TV.
+2. **Chuẩn bị máy Mac** (một lần): cài Tizen Studio CLI và tạo chứng chỉ ký app.
+
+   ```bash
+   git clone https://github.com/meocong/prj-tv-samsung.git && cd prj-tv-samsung
+   tools/setup-mac.sh
+   ```
+3. **Cá nhân hóa** (tùy chọn): tên nhà, vị trí thời tiết, ảnh gia đình. Xem [phần dưới](#cá-nhân-hóa).
+4. **Cài lên TV**:
+
+   ```bash
+   TV_HOST=<IP TV> tools/deploy.sh      # kiểm tra, đóng gói, ký, cài, mở app
+   ```
+5. **Cài đặt TV** cho màn hình chính lên ngay khi bật TV và tắt quảng cáo, theo dõi: làm theo
+   [docs/cai-dat-tv.md](docs/cai-dat-tv.md) (Autorun Last App, DNS chặn quảng cáo, Developer Mode…).
+
+## Cá nhân hóa
+
+Repo chỉ chứa cấu hình mẫu. Thông tin riêng của nhà bạn để trong thư mục `local/`, không bao giờ lên Git (đã có trong
+`.gitignore`). Khi deploy hay xem thử, `local/` được ghép đè lên `app/`.
 
 ```bash
-tools/deploy.sh                                 # kiểm tra, đóng gói, ký, cài, mở app
-tools/.venv/bin/python tools/sync_apps.py       # sau khi cài/gỡ app trên TV: đồng bộ danh sách + icon
-python3 tools/preview.py                        # xem thử trên Chrome: http://localhost:8765
-node --test tests/*.test.js                     # test âm lịch, lịch vạn niên, ngày lễ, câu nói, ngày này năm xưa
+cp -R local.example local                 # rồi sửa local/config.local.js
+tools/.venv/bin/python tools/photos.py ~/Pictures/a.jpg ~/Pictures/b.jpg   # ảnh gia đình → local/img/family/
+cp ~/Pictures/avatar.jpg local/img/avatar.jpg                              # ảnh tròn góc phải
 ```
 
-- **Sửa mặc định:** chỉnh [app/config.js](app/config.js). Trong đó có tên gia đình, dock, vị trí thời tiết,
-  sinh nhật người nhà (âm hoặc dương lịch), ảnh gia đình.
-- **Thêm ảnh gia đình:** `tools/.venv/bin/python tools/photos.py ~/Downloads/anh1.jpg …` dựng ảnh 1920×1080 vào
-  `app/img/family/` (ảnh dọc/vuông được đặt khung trên nền chính nó làm mờ) và tự cập nhật `familyPhotos`; rồi
-  chạy `tools/deploy.sh`.
-- **Debug trên TV:** `sdb shell 0 was_kill NhaMinh000.NhaMinh`, rồi `sdb shell 0 debug NhaMinh000.NhaMinh` in
-  ra cổng; `sdb forward tcp:9333 tcp:PORT` (cổng máy Mac nên khác cổng TV, tránh trùng chương trình khác);
-  rồi `node tools/inspect.js --port 9333 --eval "…"`.
-- **Thử quay về:** `curl http://192.168.1.7:8001/api/v2/applications/<id>` cho biết app nào đang chạy/đang hiện.
-- **Điều khiển TV từ máy:** `tools/.venv/bin/python tools/tv.py key KEY_HOME`.
+| File trong `local/` | Dùng để |
+|---|---|
+| `config.local.js` | Ghi đè [app/config.js](app/config.js): `familyName`, `location`/`locations`, `familyPhotos`, `birthdays`… |
+| `app-name.txt` | Tên app trên Smart Hub (dòng đầu). Đổi tên thì phải gỡ app rồi cài lại TV mới nhận. |
+| `img/avatar.jpg` | Ảnh avatar góc phải. |
+| `img/family/*.jpg` | Ảnh gia đình 1920×1080 (tạo bằng `tools/photos.py`: ảnh dọc được đặt khung trên nền mờ). |
+
+Các tùy chọn chung (dock, app ẩn, kênh YouTube, tên cổng HDMI, mặc định của Cài đặt) nằm trong
+[app/config.js](app/config.js). Sau khi đổi app trên TV (cài thêm, gỡ bớt), chạy
+`tools/.venv/bin/python tools/sync_apps.py` để cập nhật danh sách app và icon.
+
+## Phát triển
+
+```bash
+python3 tools/preview.py                  # xem thử trên Chrome: http://localhost:8765 (ghép local/)
+python3 tools/preview.py 8765 --public    # đúng như người khác thấy khi clone repo
+node --test tests/*.test.js               # âm lịch, lịch vạn niên, ngày lễ, câu nói, ngày này năm xưa, kho ảnh
+tools/check_compat.sh                     # chặn cú pháp mới hơn ES2018 (Chromium 69 của TV)
+```
+
+- **Debug trên TV**: `sdb shell 0 was_kill NhaMinh000.NhaMinh`, rồi `sdb shell 0 debug NhaMinh000.NhaMinh` in ra cổng;
+  `sdb forward tcp:9333 tcp:<cổng>`; rồi `node tools/inspect.js --port 9333 --eval "NhaMinhDebug.wall()"` (chạy JS,
+  gửi phím, chụp màn hình). `performance` có mốc `scripts`, `home`, `ready` để đo thời gian mở app.
+- **Dịch vụ nền**: `http://<IP TV>:8701/` cho biết dịch vụ chạy từ lúc nào, đang canh app nào và nhật ký gần đây.
+- **Trạng thái app**: `curl http://<IP TV>:8001/api/v2/applications/<id>` (YouTube cần mã store `111299001912`).
+- **Điều khiển TV từ máy**: `tools/.venv/bin/python tools/tv.py key KEY_HOME`.
+
+## Cách hoạt động
+
+- **Thoát app là về đây.** Samsung không cho app tự cài làm nút Home. Một dịch vụ nền
+  ([app/service/watch.js](app/service/watch.js)) hỏi REST API của chính TV (`127.0.0.1:8001`) mỗi 0,3 giây xem app đang
+  canh còn chạy, còn hiện không. App đó tắt hoặc khuất quá 1,2 giây thì mở lại màn hình chính. Khi không có app nào được
+  mở từ đây, dịch vụ vẫn dò vài giây một lần xem có app nào đang hiện để canh luôn. Lúc TV sắp tắt (PowerState rời "on"),
+  nó đưa màn hình chính lên trước, để TV chỉ ngủ (Instant On) thì bật lên là thấy màn hình chính.
+- **Mở thẳng video YouTube**: app-control `PAYLOAD` dạng `v=<mã video>&t=0`, giống điện thoại cast lên TV.
+- **Mượt trên TV yếu**: hình nền vẽ sẵn vào canvas, chỉ 1–2 lớp toàn màn hình, các khối mờ dần có lớp riêng, ảnh giải mã
+  trước khi chuyển, việc phụ dời sang lúc rảnh.
+
+### Kho dữ liệu trên TV
+
+Mở app là hiện ngay từ kho. Chỉ tải mạng khi đã tới hạn, không tải chỉ vì vừa mở app. Kho nào cũng có giới hạn.
+
+| Kho | Giữ | Làm mới |
+|---|---|---|
+| Ảnh nền (IndexedDB) | 30 ảnh ≈ 12 MB, xóa ảnh lâu không dùng nhất | ảnh kế tiếp tải sẵn |
+| Danh sách ảnh Bing | 120 ảnh gần nhất | mỗi ngày một lần |
+| Câu nói hay | 600 danh ngôn (cộng dồn 50 câu mỗi ngày) + tục ngữ | mỗi ngày; tục ngữ mỗi tuần |
+| Hàng YouTube | 12 video mới nhất | mỗi giờ |
+| Tin mới | 40 tin | 20 phút |
+| Ngày này năm xưa (IndexedDB) | mãi mãi, tối đa 366 trang ngày ≈ 1,5 MB | mỗi ngày chỉ tải một lần; tải sẵn 7 ngày tới |
+| Thời tiết | mỗi nơi đã chọn một bản | khi bản đang có cũ hơn 20 phút |
+
+## Hạn chế đã biết
+
+- Nút **Home** trên remote vẫn mở thanh Home của Samsung; không app nào thay được nút này.
+- Samsung không cho app cài bằng chứng chỉ thường tự chạy khi TV khởi động: không on-boot, không prelaunch (bỏ từ 2019),
+  và "Tự động chạy ứng dụng cuối cùng" chỉ dành cho app Samsung cho phép. Để bật TV là vào thẳng màn hình chính, dùng một
+  quy tắc SmartThings "TV bật → mở app" ([docs/cai-dat-tv.md](docs/cai-dat-tv.md#2-bật-tv-là-vào-thẳng-màn-hình-chính)).
+- Gợi ý, "xem tiếp" của YouTube, Netflix nằm trong từng app; Samsung không cho app khác đọc.
+
+Chi tiết và cách gỡ bỏ: [docs/cai-dat-tv.md](docs/cai-dat-tv.md).
 
 ## Cấu trúc
 
 ```
-app/            app web Tizen (config.xml, index.html, css/, js/, games/, service/, icons/, fonts/)
-tools/          setup-mac.sh, deploy.sh, check_compat.sh, sync_apps.py, tv.py, inspect.js, preview.py
-docs/           cai-dat-tv.md: tắt theo dõi, quảng cáo, DNS, hình ảnh, AirPlay, gỡ bỏ
-tests/          test âm lịch, lịch vạn niên (đối chiếu lichvannien.net), ngày lễ, nội dung
+app/            app web Tizen: config.xml, index.html, css/, js/, service/ (dịch vụ nền), games/, icons/, fonts/, img/
+local.example/  mẫu cấu hình riêng (chép thành local/, không lên Git)
+tools/          setup-mac.sh, deploy.sh, preview.py, photos.py, sync_apps.py, tv.py, inspect.js, check_compat.sh
+docs/           cai-dat-tv.md (cài đặt TV, DNS, hạn chế, gỡ bỏ), screenshots/
+tests/          test Node: âm lịch, lịch vạn niên, ngày lễ, nội dung
 ```
 
-## Việc cần làm trên TV, hạn chế đã biết, gỡ bỏ
+## Ghi công
 
-Xem [docs/cai-dat-tv.md](docs/cai-dat-tv.md): danh sách chốt ở đầu, hạn chế và cách gỡ ở cuối.
+Lấy cảm hứng từ [cleanyourtv](https://github.com/Gathin23/cleanyourtv) (Android TV). Giao diện port từ
+[webos-vibehack](https://github.com/OmkarK97/webos-vibehack). Game, font và mã của bên thứ ba cùng giấy phép của chúng:
+xem [NOTICE](NOTICE).
+
+Dữ liệu: Bing Image of the Day, [Open-Meteo](https://open-meteo.com) (CC BY 4.0), Wikipedia và Wikiquote tiếng Việt
+(CC BY-SA), [ZenQuotes](https://zenquotes.io), RSS của VnExpress, Thanh Niên, Dân Trí và các kênh YouTube. Thuật toán
+âm lịch theo Hồ Ngọc Đức. Logo app trong `app/icons/` thuộc về chủ sở hữu của từng app.

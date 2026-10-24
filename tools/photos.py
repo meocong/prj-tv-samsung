@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Ảnh gia đình → khung 1920×1080 cho hình nền và màn hình chờ (app/img/family/NN.jpg).
+"""Ảnh gia đình → khung 1920×1080 cho hình nền và màn hình chờ (local/img/family/NN.jpg, không lên Git).
 
 Ảnh ngang rộng (≥ 1.6:1) được cắt vừa khung; ảnh vuông hoặc 4:3 đặt giữa, nền là chính ảnh đó phóng to và làm mờ,
-để không mất đầu ai. Sau đó cập nhật danh sách familyPhotos trong app/config.js.
+để không mất đầu ai. Sau đó cập nhật danh sách familyPhotos trong local/config.local.js (tạo nếu chưa có).
 
     tools/.venv/bin/python tools/photos.py ~/Downloads/a.jpg ~/Downloads/b.jpg …
 """
@@ -13,7 +13,7 @@ import sys
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageOps
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(ROOT, "app", "img", "family")
+OUT = os.path.join(ROOT, "local", "img", "family")
 W, H = 1920, 1080
 
 
@@ -50,11 +50,15 @@ def main(paths):
         out.save(os.path.join(OUT, name), quality=86, optimize=True)
         names.append("img/family/" + name)
         print("  %s  %dx%d → %s" % (os.path.basename(p), im.width, im.height, name))
-    cfg = os.path.join(ROOT, "app", "config.js")
-    s = open(cfg, encoding="utf-8").read()
-    s = re.sub(r"familyPhotos: \[[^\]]*\]", "familyPhotos: [" + ", ".join("'%s'" % n for n in names) + "]", s)
+    cfg = os.path.join(ROOT, "local", "config.local.js")
+    photos = "familyPhotos: [" + ", ".join("'%s'" % n for n in names) + "]"
+    if os.path.exists(cfg):
+        s = open(cfg, encoding="utf-8").read()
+        s = re.sub(r"familyPhotos: \[[^\]]*\]", photos, s) if "familyPhotos" in s else s.replace("Object.assign(window.CONFIG, {", "Object.assign(window.CONFIG, {\n  " + photos + ",")
+    else:
+        s = "// Cấu hình riêng (không lên Git). Xem local.example/config.local.js.\nObject.assign(window.CONFIG, {\n  " + photos + "\n});\n"
     open(cfg, "w", encoding="utf-8").write(s)
-    print("Đã ghi %d ảnh và cập nhật familyPhotos trong app/config.js" % len(names))
+    print("Đã ghi %d ảnh vào local/img/family và cập nhật local/config.local.js" % len(names))
 
 
 if __name__ == "__main__":
