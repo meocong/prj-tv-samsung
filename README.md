@@ -38,7 +38,9 @@ service that brings you back home when you leave an app. UI text is Vietnamese.*
   theo giờ, nền đen.
 - **Màn hình chờ** sau 3 phút không bấm gì: ảnh chuyển mờ dần xen ảnh gia đình, đồng hồ, âm lịch, thời tiết, câu nói.
 - **Thoát app là về đây**: dịch vụ nền canh app đang mở (kể cả mở từ Smart Hub) và đưa về màn hình chính, thường dưới
-  1 giây.
+  1 giây. Bật TV từ chế độ ngủ cũng vào thẳng màn hình chính.
+- **Giải phóng RAM**: app nào chạy ẩn quá 5 phút (Netflix thoát ra vẫn chạy ngầm) thì dịch vụ nền đóng lại; chỉnh trong
+  Cài đặt → Màn hình chính → *Đóng app chạy ngầm*.
 - **Nguồn vào** (HDMI, truyền hình, đặt tên riêng cho cổng), **Cài đặt** nhiều tầng như Apple TV, lối tắt vào cài đặt
   của TV.
 - **Nhanh và nhẹ trên TV**: mọi thứ lưu sẵn trên TV, mở app không tải mạng, chỉ cập nhật khi tới hạn (xem
@@ -134,8 +136,10 @@ Mở app là hiện ngay từ kho. Chỉ tải mạng khi đã tới hạn, khô
 
 - Nút **Home** trên remote vẫn mở thanh Home của Samsung; không app nào thay được nút này.
 - Samsung không cho app cài bằng chứng chỉ thường tự chạy khi TV khởi động: không on-boot, không prelaunch (bỏ từ 2019),
-  và "Tự động chạy ứng dụng cuối cùng" chỉ dành cho app Samsung cho phép. Để bật TV là vào thẳng màn hình chính, dùng một
-  quy tắc SmartThings "TV bật → mở app" ([docs/cai-dat-tv.md](docs/cai-dat-tv.md#2-bật-tv-là-vào-thẳng-màn-hình-chính)).
+  và "Tự động chạy ứng dụng cuối cùng" chỉ dành cho app Samsung cho phép. TV ngủ rồi bật lại thì màn hình chính tự lên;
+  sau khi TV khởi động lại hẳn, xem các cách ở
+  [docs/cai-dat-tv.md](docs/cai-dat-tv.md#2-bật-tv-là-vào-thẳng-màn-hình-chính) (Smart Hub Preview, `tools/autostart.py`).
+- Không tắt được dịch vụ hệ thống của Samsung: Developer Mode không có root hay shell.
 - Gợi ý, "xem tiếp" của YouTube, Netflix nằm trong từng app; Samsung không cho app khác đọc.
 
 Chi tiết và cách gỡ bỏ: [docs/cai-dat-tv.md](docs/cai-dat-tv.md).
@@ -145,7 +149,8 @@ Chi tiết và cách gỡ bỏ: [docs/cai-dat-tv.md](docs/cai-dat-tv.md).
 ```
 app/            app web Tizen: config.xml, index.html, css/, js/, service/ (dịch vụ nền), games/, icons/, fonts/, img/
 local.example/  mẫu cấu hình riêng (chép thành local/, không lên Git)
-tools/          setup-mac.sh, deploy.sh, preview.py, photos.py, sync_apps.py, tv.py, inspect.js, check_compat.sh
+tools/          setup-mac.sh, deploy.sh, preview.py, photos.py, sync_apps.py, tv.py, inspect.js, check_compat.sh,
+                autostart.py (chạy trên thiết bị luôn bật: TV bật là mở màn hình chính)
 docs/           huong-dan-cai-dat.md (cài từ đầu, xử lý lỗi), cai-dat-tv.md (cài đặt TV, DNS, hạn chế, gỡ bỏ), screenshots/
 tests/          test Node: âm lịch, lịch vạn niên, ngày lễ, nội dung
 ```

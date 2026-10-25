@@ -105,12 +105,21 @@
    * Start the background service, optionally telling it which app is about to open ([storeId, tizenId]).
    * done() runs once the service has the message (or failed to get it) — never more than 800 ms later.
    */
+  var serviceOptions = { closeAfter: 5 };   // minutes an app may sit hidden before the service closes it; 0 = never
+
+  /** Settings the service should know about; sent with every message (and right away). */
+  function setServiceOption(key, value) {
+    serviceOptions[key] = value;
+    if (isTV) tellService(null);
+  }
+
   function tellService(launchedIds, done) {
     var called = false;
     function finish() { if (!called) { called = true; if (done) done(); } }
     try {
       // Every message carries the TV's apps (most used first), so the service can also watch apps opened elsewhere.
-      var data = [new tizen.ApplicationControlData('apps', (root.TV_APPS || []).map(function (a) { return a.storeId || a.id; }))];
+      var data = [new tizen.ApplicationControlData('apps', (root.TV_APPS || []).map(function (a) { return a.storeId || a.id; })),
+        new tizen.ApplicationControlData('closeAfter', [String(serviceOptions.closeAfter)])];
       if (launchedIds) {
         data.push(new tizen.ApplicationControlData('launched', launchedIds.filter(Boolean)));
         // The other apps on the home screen: if one of them is in front, the user moved on by themselves.
@@ -315,6 +324,7 @@
 
   root.Platform = {
     openTvSettings: openTvSettings,
+    setServiceOption: setServiceOption,
     launchWithPayload: launchWithPayload,
     isTV: isTV,
     getJSON: getJSON,

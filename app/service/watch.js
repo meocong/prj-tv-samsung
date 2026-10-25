@@ -32,6 +32,35 @@ function note(what) {
   if (log.length > 40) log.shift();
 }
 
+// How long the TV itself has been up (not this service): tells a fresh boot from a wake-up hours later.
+var fs = null;
+try { fs = require('fs'); } catch (e) { /* no fs in this runtime */ }
+function tvUptimeS() {
+  try { return Math.round(parseFloat(String(fs.readFileSync('/proc/uptime')).split(' ')[0])); } catch (e) { return null; }
+}
+
+// Smart Hub "personal preview" (config.xml: use.preview = bg_service): the TV starts this service by itself every
+// ~10 minutes, also when nobody opened the home screen, e.g. after the TV booted. The preview row is a bonus.
+var webapis = null, previewErr = '';
+if (typeof global !== 'undefined' && global.webapis) webapis = global.webapis;
+['$WEBAPIS/service/webapis.js', '$WEBAPIS/webapis/webapis.js', '/usr/share/webapis/webapis/webapis.js'].forEach(function (p) {
+  if (webapis) return;
+  try { webapis = require(p); previewErr = 'ok: ' + p; } catch (e) { previewErr += p + ': ' + (e && e.message) + '; '; }
+});
+var previewAt = 0;
+function setPreview() {
+  if (!webapis || !webapis.preview || Date.now() - previewAt < 10 * 60000) return;
+  previewAt = Date.now();
+  var data = { sections: [{ title: 'Màn hình chính', tiles: [{
+    title: 'Mở màn hình chính', subtitle: 'Thời tiết, lịch, YouTube, tin mới', image_ratio: '16by9',
+    image_url: 'https://www.bing.com/th?id=OHR.NaejangsanNP_ROW0481262720_1920x1080.jpg',
+    action_data: JSON.stringify({ open: 'home' }), is_playable: false }] }] };
+  try {
+    webapis.preview.setPreviewData(JSON.stringify(data), function () { note('đã cập nhật ô xem trước'); },
+      function (e) { note('ô xem trước lỗi: ' + (e && e.message)); });
+  } catch (e) { note('ô xem trước lỗi: ' + e.message); }
+}
+
 function status(id, cb) {
   var done = false;
   function finish(v) { if (!done) { done = true; cb(v); } }
@@ -147,9 +176,53 @@ function checkPower() {
     note('nguồn: ' + power + ' -> ' + state);
     var leaving = power === 'on';
     power = state;
-    if (!leaving) return;
     watched = null;
+    if (!leaving) return bringHome('TV vừa bật');   // back from standby: the TV shows Smart Hub or the last app
     status(HOME, function (me) { if (!me || !me.visible) launchHome('TV sắp tắt'); });
+  });
+}
+
+/**
+ * Right after the TV comes on: make sure the home screen ends up in front, checking a few times over ~15 seconds
+ * because Smart Hub or the TV's own "last app" may come up after us.
+ */
+function bringHome(why) {
+  [1500, 4000, 8000, 15000].forEach(function (ms) {
+    setTimeout(function () {
+      if (power !== 'on') return;
+      status(HOME, function (me) { if (!me || !me.visible) launchHome(why); });
+    }, ms);
+  });
+}
+
+// ---- apps left running in the background: close them after a while to free the TV's memory ---------
+
+var CLEAN_MS = 60000, cleanAt = 0, closeAfter = 5 * 60000, hiddenSince = {};
+
+function closeApp(id, name) {
+  try {
+    var req = http.request({ host: '127.0.0.1', port: 8001, path: '/api/v2/applications/' + encodeURIComponent(id),
+      method: 'DELETE', timeout: 3000 }, function (res) {
+      res.resume();
+      note('đóng ' + (name || id) + ' chạy ngầm (giải phóng RAM): ' + res.statusCode);
+    });
+    req.on('error', function () {});
+    req.on('timeout', function () { req.abort(); });
+    req.end();
+  } catch (e) { /* nothing to do */ }
+}
+
+/** Once a minute: an app that has stayed hidden for closeAfter (Netflix only hides when you leave it) gets closed. */
+function clean() {
+  if (!closeAfter || !known.length || Date.now() - cleanAt < CLEAN_MS) return;
+  cleanAt = Date.now();
+  known.forEach(function (id) {
+    status(id, function (s) {
+      if (!s || !s.running || s.visible) { delete hiddenSince[id]; return; }
+      if (watched && watched.ids.indexOf(id) !== -1) return;   // just left: tick() decides about going home first
+      if (!hiddenSince[id]) hiddenSince[id] = Date.now();
+      else if (Date.now() - hiddenSince[id] >= closeAfter) { delete hiddenSince[id]; closeApp(id, s.name); }
+    });
   });
 }
 
@@ -160,7 +233,8 @@ try {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
     res.end(JSON.stringify({
       since: new Date(started).toString(), power: power, watching: watched ? watched.ids : null,
-      knownApps: known.length, log: log
+      knownApps: known.length, tvUptimeS: tvUptimeS(), fs: !!fs, preview: !!(webapis && webapis.preview),
+      previewErr: previewErr || undefined, closeAfterMin: closeAfter / 60000, log: log
     }, null, 1));
   });
   server.on('error', function () { /* port taken: no status page */ });
@@ -169,6 +243,7 @@ try {
 
 function tick() {
   checkPower();
+  if (power === 'on') clean();
   if (!watched) return guard();
   if (Date.now() - watched.since > GIVE_UP_MS && !watched.seenRunning) { watched = null; return; }
   appState(watched.ids, function (s) {
@@ -190,10 +265,14 @@ function tick() {
   });
 }
 
+/** Reads the request; returns true when it came from the home screen (it always sends the app list). */
 function readRequest() {
+  var fromHome = false;
   try {
     var req = tizen.application.getCurrentApplication().getRequestedAppControl();
     var data = (req && req.appControl && req.appControl.data) || [];
+    fromHome = data.some(function (d) { return d.key === 'apps'; });
+    if (!fromHome) note('được gọi bởi ' + ((req && req.callerAppId) || 'hệ thống') + ' (' + ((req && req.appControl && req.appControl.operation) || '?') + ')');
     data.forEach(function (d) {
       if (d.key === 'launched' && d.value && d.value.length) {
         watched = { ids: d.value.filter(Boolean), since: Date.now(), seenRunning: false, others: watched ? watched.others : [] };
@@ -201,21 +280,32 @@ function readRequest() {
         watched.others = d.value || [];
       } else if (d.key === 'apps') {
         known = (d.value || []).filter(function (id) { return id && id !== HOME; });
+      } else if (d.key === 'closeAfter') {
+        closeAfter = Math.max(0, parseInt(d.value && d.value[0], 10) || 0) * 60000;
       } else if (d.key === 'stop') {
         watched = null;
       }
     });
-  } catch (e) { /* started without data */ }
+  } catch (e) { note('được gọi không kèm dữ liệu'); }
+  return fromHome;
+}
+
+/** Started by the TV, not by the home screen: right after a boot, put the home screen up. */
+function startedByTv() {
+  setPreview();
+  var up = tvUptimeS();
+  note('TV đã chạy ' + (up === null ? '?' : up + ' giây'));
+  if (up !== null && up < 300) bringHome('TV vừa khởi động');
 }
 
 module.exports.onStart = function () {
   note('dịch vụ bắt đầu');
-  readRequest();
+  if (!readRequest()) startedByTv();
   if (!timer) timer = setInterval(tick, POLL_MS);
 };
 
 module.exports.onRequest = function () {
-  readRequest();
+  if (!readRequest()) startedByTv();
   if (!timer) timer = setInterval(tick, POLL_MS);
 };
 

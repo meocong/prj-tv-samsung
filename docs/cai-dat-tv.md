@@ -38,16 +38,35 @@ Nếu hỏi PIN thì nhập 0000.
 
 **Tổng quát → Tính năng thông minh** (General → Smart Features):
 - **Tự động chạy Smart Hub** (Autorun Smart Hub): **Tắt**.
-- **Tự động chạy ứng dụng cuối cùng** (Autorun Last App): **Bật**. Lưu ý: Samsung chỉ cho một danh sách app chọn
-  sẵn (YouTube, Netflix…) tự mở lại; app tự cài như màn hình chính này **không** nằm trong danh sách. Nó chỉ giúp khi
-  TV ngủ (Instant On): dịch vụ nền đưa màn hình chính lên trước lúc TV tắt, bật lên là thấy nó.
+- **Tự động chạy ứng dụng cuối cùng** (Autorun Last App): **Bật**. Samsung chỉ cho một danh sách app chọn sẵn
+  (YouTube, Netflix…) tự mở lại; app tự cài như màn hình chính này **không** nằm trong danh sách.
 - **Tự động chạy Samsung TV Plus** (Autorun Samsung TV Plus): **Tắt**.
 
-**Bật TV từ trạng thái tắt hẳn mà vẫn vào màn hình chính**: cần một thứ bên ngoài TV ra lệnh mở app khi TV bật. Cách
-gọn nhất là **SmartThings** (chạy trên mây, không cần máy nào bật suốt): thêm TV vào app SmartThings, rồi tạo quy tắc
-"khi TV bật → gửi lệnh `custom.launchapp` / `launchApp` với `NhaMinh000.NhaMinh`". Tạo bằng SmartThings CLI hoặc Rules
-API với một Personal Access Token ([account.smartthings.com/tokens](https://account.smartthings.com/tokens)). Cách khác:
-một máy luôn bật (Raspberry Pi, Home Assistant) thấy TV bật thì gọi `POST http://<IP TV>:8001/api/v2/applications/NhaMinh000.NhaMinh`.
+Màn hình chính tự lên khi bật TV nhờ dịch vụ nền của app:
+
+- **TV ngủ rồi bật lại** (bấm nút nguồn bình thường; TV 2020 chỉ ngủ chứ không tắt hẳn): dịch vụ nền vẫn chạy, thấy
+  trạng thái nguồn chuyển `standby → on` là đưa màn hình chính lên trong vài giây. Đã thử trên UA50TU8500.
+- **TV khởi động lại hẳn** (rút điện, mất điện, hoặc TV tự tắt hẳn sau một thời gian dài): dịch vụ nền khai báo là
+  dịch vụ *Smart Hub Personal Preview*. Theo tài liệu Samsung, hệ thống tự gọi loại dịch vụ này định kỳ (khoảng 10 phút
+  một lần); dịch vụ thấy TV vừa khởi động (dưới 5 phút) thì đưa màn hình chính lên. Đang thử nghiệm: nếu chưa thấy tự
+  lên, mở ô màn hình chính một lần là dịch vụ chạy lại.
+- **Chắc chắn nhất, nếu nhà có một thiết bị luôn bật** cùng mạng (điện thoại Android cũ, Raspberry Pi, NAS, máy tính
+  bàn): chạy `tools/autostart.py`, nó hỏi TV vài giây một lần và mở màn hình chính ngay khi TV bật. Chỉ cần Python 3:
+
+  ```bash
+  python3 autostart.py --tv <IP TV>            # chạy mãi
+  python3 autostart.py --tv <IP TV> --once     # thử: mở màn hình chính ngay
+  ```
+
+  - *Android (Termux)*: cài Termux và Termux:Boot từ F-Droid, `pkg install python`, chép `autostart.py` vào máy, tạo
+    `~/.termux/boot/nha-minh` gồm hai dòng `termux-wake-lock` và `python ~/autostart.py --tv <IP TV> &`, rồi tắt tối ưu
+    pin cho Termux.
+  - *Raspberry Pi / Linux*: tạo một dịch vụ systemd chạy `python3 /home/pi/autostart.py --tv <IP TV>` với
+    `Restart=always`.
+  - *Mac / Windows*: chạy khi đăng nhập (launchd, Task Scheduler); chỉ có tác dụng lúc máy không ngủ.
+
+SmartThings không giúp được: Thói quen trong app SmartThings không có hành động "mở app" cho TV, còn Rules API cần đăng
+nhập trang web SmartThings (`custom.launchapp`), cách này chưa thử được.
 
 Trên thanh Home của Samsung: chọn ô của app (mặc định **Nhà Mình**) → bấm xuống → **Di chuyển**, đưa về đầu tiên.
 

@@ -59,6 +59,7 @@ window.CONFIG = {
     showToday: true,           // khối "Hôm nay": ngày này năm xưa, câu nói hay, tin mới
     showStats: false,          // CPU và bộ nhớ trống dưới đồng hồ
     returnHome: true,          // thoát app mở từ đây (YouTube, Netflix…) thì quay về màn hình này
+    closeHidden: 5,            // phút: app chạy ẩn lâu hơn thì dịch vụ nền đóng để giải phóng RAM; 0 = không
     wallpaper: 'photo',        // 'photo' (ảnh Bing) | 'black'
     wallpaperEvery: 60, wallpaperPin: '',        // phút giữa hai hình nền; 0 = mỗi ngày một ảnh
     clock24: true,

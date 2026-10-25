@@ -760,6 +760,8 @@
     rows: function () {
       return [
         onOff('returnHome', 'Thoát app thì về đây', null, ['Bật', 'Tắt']),
+        choice('closeHidden', 'Đóng app chạy ngầm', [[5, 'Sau 5 phút'], [15, 'Sau 15 phút'], [0, 'Không']],
+          function () { Platform.setServiceOption('closeAfter', settings.closeHidden); }),
         choice('columns', 'Số ô mỗi hàng', [[4, '4 (lớn)'], [5, '5'], [6, '6 (nhiều app)']], function () { setGeometry(); loadApps(); }),
         choice('clock24', 'Đồng hồ', [[true, '24 giờ'], [false, '12 giờ']], updateClockNow),
         choice('wallpaper', 'Hình nền', [['photo', 'Ảnh đẹp mỗi ngày'], ['mix', 'Ảnh đẹp + ảnh gia đình'], ['family', 'Ảnh gia đình'],
@@ -1627,5 +1629,5 @@
   setInterval(function () { if (!document.hidden) Shelf.warm(); }, 60 * 60000);
   loadApps();
   Platform.setTvScreenSaver(true);
-  Platform.startService();
+  Platform.setServiceOption('closeAfter', settings.closeHidden);   // also starts the service
 })(this);
