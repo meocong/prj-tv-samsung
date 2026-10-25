@@ -161,9 +161,10 @@ function checkPower() {
 }
 
 /**
- * Right after the TV comes on: make sure the home screen ends up in front, checking a few times over ~15 seconds
- * because Smart Hub or the TV's own "last app" may come up after us. A check that runs late (the service was paused
- * in between) is dropped: by then the user may well have opened an app on purpose.
+ * Right after the TV comes on: get the home screen in front, trying a few times over ~15 seconds because Smart Hub
+ * or the TV's own "last app" may come up after us. It stops as soon as the home screen has been on screen once, or
+ * the user opens an app from it: from then on what is on screen is the user's choice. A check that runs late (the
+ * service was paused in between) is dropped too.
  */
 var wakeAt = 0;
 function bringHome(why) {
@@ -171,9 +172,20 @@ function bringHome(why) {
   [1500, 4000, 8000, 15000].forEach(function (ms) {
     setTimeout(function () {
       if (power !== 'on' || wakeAt !== at || Date.now() - at > 25000) return;
-      status(HOME, function (me) { if (!me || !me.visible) launchHome(why); });
+      status(HOME, function (me) {
+        if (wakeAt !== at) return;
+        if (me && me.visible) { wakeAt = 0; return; }   // made it: leave the screen to the user
+        launchHome(why);
+      });
     }, ms);
   });
+}
+
+/** While bringing the home screen up: the moment it is on screen, the job is done. */
+function wakeDone() {
+  if (!wakeAt) return;
+  var at = wakeAt;
+  status(HOME, function (me) { if (me && me.visible && wakeAt === at) wakeAt = 0; });
 }
 
 // ---- apps left running in the background: close them after a while to free the TV's memory ---------
@@ -234,6 +246,7 @@ function tick() {
     wakeAt = 0;
   }
   lastTick = now;
+  wakeDone();
   checkPower();
   if (power === 'on') clean();
   if (!watched) return guard();
@@ -263,6 +276,7 @@ function readRequest() {
     var data = (req && req.appControl && req.appControl.data) || [];
     data.forEach(function (d) {
       if (d.key === 'launched' && d.value && d.value.length) {
+        wakeAt = 0;   // the user opened an app from the home screen: no more bringing the home screen up
         watched = { ids: d.value.filter(Boolean), since: Date.now(), seenRunning: false, others: watched ? watched.others : [] };
       } else if (d.key === 'others' && watched) {
         watched.others = d.value || [];
