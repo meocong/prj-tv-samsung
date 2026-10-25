@@ -47,9 +47,11 @@ service that brings you back home when you leave an app. UI text is Vietnamese.*
 ## Cài đặt
 
 Cần: một máy Mac (Intel hoặc Apple Silicon) cùng mạng với TV, và TV Samsung Tizen (2017 trở đi; thử kỹ trên 2020).
+**Hướng dẫn từng bước, kèm cách xử lý lỗi: [docs/huong-dan-cai-dat.md](docs/huong-dan-cai-dat.md).** Tóm tắt:
 
-1. **Bật Developer Mode trên TV**: mở *Ứng dụng*, bấm `1 2 3 4 5` trên remote, bật *Developer mode*, nhập **IP máy Mac**
-   vào *Host PC IP*, rồi khởi động lại TV.
+1. **Bật Developer Mode trên TV**: mở *Ứng dụng*, bấm `1 2 3 4 5` trên remote (remote không có phím số thì bấm nút
+   **123** để hiện bàn phím số), bật *Developer mode*, nhập **IP máy Mac** vào *Host PC IP*, rồi giữ nút nguồn 5 giây
+   để TV khởi động lại hẳn.
 2. **Chuẩn bị máy Mac** (một lần): cài Tizen Studio CLI và tạo chứng chỉ ký app.
 
    ```bash
@@ -144,7 +146,7 @@ Chi tiết và cách gỡ bỏ: [docs/cai-dat-tv.md](docs/cai-dat-tv.md).
 app/            app web Tizen: config.xml, index.html, css/, js/, service/ (dịch vụ nền), games/, icons/, fonts/, img/
 local.example/  mẫu cấu hình riêng (chép thành local/, không lên Git)
 tools/          setup-mac.sh, deploy.sh, preview.py, photos.py, sync_apps.py, tv.py, inspect.js, check_compat.sh
-docs/           cai-dat-tv.md (cài đặt TV, DNS, hạn chế, gỡ bỏ), screenshots/
+docs/           huong-dan-cai-dat.md (cài từ đầu, xử lý lỗi), cai-dat-tv.md (cài đặt TV, DNS, hạn chế, gỡ bỏ), screenshots/
 tests/          test Node: âm lịch, lịch vạn niên, ngày lễ, nội dung
 ```
 

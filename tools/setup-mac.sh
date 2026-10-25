@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
-# Một lần trên máy Mac: Rosetta 2, Tizen Studio CLI, chứng chỉ ký app và security profile "nhaminh".
+# Một lần trên máy Mac: Rosetta 2, Tizen Studio CLI, chứng chỉ ký app, security profile "nhaminh" và môi trường
+# Python cho các công cụ phụ (tools/tv.py, photos.py, sync_apps.py).
 # Chạy lại an toàn: bước nào đã xong thì bỏ qua.
 #
 #   tools/setup-mac.sh
 set -euo pipefail
 
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TIZEN_HOME="${TIZEN_HOME:-$HOME/tizen-studio}"
 DATA="$HOME/tizen-studio-data"
 PROFILE="${TIZEN_PROFILE:-nhaminh}"
@@ -48,6 +50,13 @@ if ! tizen security-profiles list 2>/dev/null | grep -qw "$PROFILE"; then
   tizen security-profiles add -n "$PROFILE" -a "$CERT_DIR/$PROFILE.p12" -p "$PASS"
 fi
 tizen cli-config "default.profiles.path=$DATA/profile/profiles.xml" >/dev/null 2>&1 || true
+
+if [ ! -x "$ROOT/tools/.venv/bin/python" ]; then
+  say "Tạo môi trường Python tools/.venv (samsungtvws, Pillow)"
+  python3 -m venv "$ROOT/tools/.venv"
+  "$ROOT/tools/.venv/bin/pip" install -q --upgrade pip
+  "$ROOT/tools/.venv/bin/pip" install -q samsungtvws pillow
+fi
 
 say "Xong. Thêm vào ~/.zshrc nếu muốn gõ lệnh trực tiếp:"
 echo "  export PATH=\"$TIZEN_HOME/tools:$TIZEN_HOME/tools/ide/bin:\$PATH\""
