@@ -137,8 +137,8 @@ Mở app là hiện ngay từ kho. Chỉ tải mạng khi đã tới hạn, khô
 - Nút **Home** trên remote vẫn mở thanh Home của Samsung; không app nào thay được nút này.
 - Samsung không cho app cài bằng chứng chỉ thường tự chạy khi TV khởi động: không on-boot, không prelaunch (bỏ từ 2019),
   và "Tự động chạy ứng dụng cuối cùng" chỉ dành cho app Samsung cho phép. TV ngủ rồi bật lại thì màn hình chính tự lên;
-  sau khi TV khởi động lại hẳn, xem các cách ở
-  [docs/cai-dat-tv.md](docs/cai-dat-tv.md#2-bật-tv-là-vào-thẳng-màn-hình-chính) (Smart Hub Preview, `tools/autostart.py`).
+  sau khi TV khởi động lại hẳn (rút điện, mất điện) thì mở ô màn hình chính một lần, hoặc dùng `tools/autostart.py`
+  trên một thiết bị luôn bật ([docs/cai-dat-tv.md](docs/cai-dat-tv.md#2-bật-tv-là-vào-thẳng-màn-hình-chính)).
 - Không tắt được dịch vụ hệ thống của Samsung: Developer Mode không có root hay shell.
 - Gợi ý, "xem tiếp" của YouTube, Netflix nằm trong từng app; Samsung không cho app khác đọc.
 

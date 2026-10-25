@@ -28,6 +28,4 @@
     </tizen:service>
     <tizen:setting screen-orientation="landscape" context-menu="disable" background-support="disable" encryption="disable" install-location="auto" hwkey-event="enable"/>
     <tizen:metadata key="http://tizen.org/metadata/app_ui_type/base_screen_resolution" value="extensive"/>
-    <!-- Smart Hub personal preview: the TV starts the service by itself (~every 10 min, and after boot). -->
-    <tizen:metadata key="http://samsung.com/tv/metadata/use.preview" value="bg_service"/>
 </widget>

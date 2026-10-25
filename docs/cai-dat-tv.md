@@ -46,10 +46,10 @@ Màn hình chính tự lên khi bật TV nhờ dịch vụ nền của app:
 
 - **TV ngủ rồi bật lại** (bấm nút nguồn bình thường; TV 2020 chỉ ngủ chứ không tắt hẳn): dịch vụ nền vẫn chạy, thấy
   trạng thái nguồn chuyển `standby → on` là đưa màn hình chính lên trong vài giây. Đã thử trên UA50TU8500.
-- **TV khởi động lại hẳn** (rút điện, mất điện, hoặc TV tự tắt hẳn sau một thời gian dài): dịch vụ nền khai báo là
-  dịch vụ *Smart Hub Personal Preview*. Theo tài liệu Samsung, hệ thống tự gọi loại dịch vụ này định kỳ (khoảng 10 phút
-  một lần); dịch vụ thấy TV vừa khởi động (dưới 5 phút) thì đưa màn hình chính lên. Đang thử nghiệm: nếu chưa thấy tự
-  lên, mở ô màn hình chính một lần là dịch vụ chạy lại.
+- **TV khởi động lại hẳn** (rút điện, mất điện, hoặc TV tự tắt hẳn sau một thời gian dài): dịch vụ nền chưa chạy,
+  nên TV mở Smart Hub hoặc app cuối cùng. Mở ô màn hình chính một lần là dịch vụ chạy lại cho cả ngày. Đã thử khai báo
+  dịch vụ là *Smart Hub Personal Preview* để hệ thống tự gọi dậy, nhưng khi đó hệ thống tạm dừng dịch vụ lúc rảnh và
+  việc quay về màn hình chính chạy sai, nên đã bỏ.
 - **Chắc chắn nhất, nếu nhà có một thiết bị luôn bật** cùng mạng (điện thoại Android cũ, Raspberry Pi, NAS, máy tính
   bàn): chạy `tools/autostart.py`, nó hỏi TV vài giây một lần và mở màn hình chính ngay khi TV bật. Chỉ cần Python 3:
 
