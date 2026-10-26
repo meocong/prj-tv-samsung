@@ -2,6 +2,7 @@
 // Sample payloads captured from the live sources on 26/10/2026.
 const test = require('node:test');
 const assert = require('node:assert/strict');
+global.T = (s, ...a) => s.replace(/\{(\d)\}/g, (m, i) => a[i]);   // i18n.js on a TV set to Vietnamese
 const { Markets } = require('../app/js/markets.js');
 
 const PNJ = { chinhanh: 'hochiminh', updateDate: '26/10/2026 13:11:17', data: [

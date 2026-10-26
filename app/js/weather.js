@@ -59,11 +59,12 @@
       'stroke-linejoin="round">' + body + '</svg>';
   }
 
-  function describe(code) { return CODES[code] || ['—', 'cloud']; }
+  /** [text in the screen's language, icon]. */
+  function describe(code) { var c = CODES[code]; return c ? [T(c[0]), c[1]] : ['—', 'cloud']; }
 
   function aqiBand(aqi) {
     for (var i = 0; i < AQI.length; i++) {
-      if (aqi <= AQI[i][0]) return { label: AQI[i][1], color: AQI[i][2], advice: AQI[i][3], level: i };
+      if (aqi <= AQI[i][0]) return { label: T(AQI[i][1]), color: AQI[i][2], advice: T(AQI[i][3]), level: i };
     }
     return null;
   }
@@ -146,5 +147,5 @@
     return { refresh: tick };
   }
 
-  root.Weather = { start: start, icon: icon, describe: describe, aqiBand: aqiBand };
+  root.Weather = { start: start, icon: icon, describe: describe, aqiBand: aqiBand, CODES: CODES, AQI: AQI };
 })(this);

@@ -6,12 +6,26 @@
  *
  * Phím: mũi tên chọn ngày (qua tháng tự đổi) · OK: xem đầy đủ ngày đó (lịch vạn niên, ngày này năm xưa) ·
  * CH+/CH− hoặc đỏ/xanh lá: tháng trước/sau · vàng: hôm nay · Back: đóng.
+ *
+ * Giao diện tiếng Anh: tên ngày, tháng, tiết khí, ngày lễ bằng tiếng Anh; can chi và tên sao giữ nguyên (là tên riêng);
+ * các lời bàn theo sách Việt (Trực, Bành Tổ, hướng và giờ xuất hành) chỉ có ở giao diện tiếng Việt.
  */
 (function (root) {
   'use strict';
 
-  var DOW = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
-  var DAYS = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+  var DOW = I18n.en ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] : ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+  var TERMS_EN = { 'Xuân phân': 'Spring Equinox', 'Thanh minh': 'Clear and Bright', 'Cốc vũ': 'Grain Rain', 'Lập hạ': 'Start of Summer',
+    'Tiểu mãn': 'Grain Buds', 'Mang chủng': 'Grain in Ear', 'Hạ chí': 'Summer Solstice', 'Tiểu thử': 'Minor Heat',
+    'Đại thử': 'Major Heat', 'Lập thu': 'Start of Autumn', 'Xử thử': 'End of Heat', 'Bạch lộ': 'White Dew',
+    'Thu phân': 'Autumn Equinox', 'Hàn lộ': 'Cold Dew', 'Sương giáng': 'Frost Descent', 'Lập đông': 'Start of Winter',
+    'Tiểu tuyết': 'Minor Snow', 'Đại tuyết': 'Major Snow', 'Đông chí': 'Winter Solstice', 'Tiểu hàn': 'Minor Cold',
+    'Đại hàn': 'Major Cold', 'Lập xuân': 'Start of Spring', 'Vũ thủy': 'Rain Water', 'Kinh trập': 'Awakening of Insects' };
+
+  /** The solar term of a day: "Sương giáng", or "Frost Descent (Sương giáng)" in English. */
+  function term(jd) {
+    var t = Lunar.solarTerm(jd);
+    return I18n.en ? TERMS_EN[t] + ' (' + t + ')' : t;
+  }
 
   var el = null, sel = null, onClose = null, monthEvents = {}, opts = {};
 
@@ -28,7 +42,7 @@
     el.innerHTML =
       '<div id="calDay"></div>' +
       '<div id="calMonth">' +
-      '  <div id="calHead"><span id="calTitle"></span><span id="calHint">OK xem ngày  ·  CH+ / CH− đổi tháng  ·  vàng hôm nay</span></div>' +
+      '  <div id="calHead"><span id="calTitle"></span><span id="calHint">' + T('OK xem ngày  ·  CH+ / CH− đổi tháng  ·  vàng hôm nay') + '</span></div>' +
       '  <div id="calDow"></div>' +
       '  <div id="calGrid"></div>' +
       '  <div id="calEvents"></div>' +
@@ -52,7 +66,7 @@
     var y = sel.getFullYear(), m = sel.getMonth() + 1;
     if (render.month !== y * 12 + m) { render.month = y * 12 + m; loadMonthEvents(y, m); }
     var today = jdOf(new Date()), selJd = jdOf(sel);
-    $('calTitle').textContent = 'Tháng ' + m + ' · ' + y;
+    $('calTitle').textContent = I18n.monthYear(m, y);
 
     // Grid: Monday first, six weeks.
     var first = new Date(y, m - 1, 1);
@@ -69,14 +83,14 @@
       if (jd === selJd) cls += ' sel';
       var ev = monthEvents[jd];
       if (ev) cls += ' ev ' + ev.kind;
-      var lunarText = l.day === 1 ? '1/' + l.month + (l.leap ? 'n' : '') : (l.day === 15 ? 'Rằm' : String(l.day));
+      var lunarText = l.day === 1 ? '1/' + l.month + (l.leap ? (I18n.en ? 'L' : 'n') : '') : (l.day === 15 && !I18n.en ? 'Rằm' : String(l.day));
       html += '<div class="' + cls + '"><b>' + s[0] + '</b><i>' + lunarText + '</i>' + (ev ? '<u></u>' : '') + '</div>';
     }
     $('calGrid').innerHTML = html;
 
     var list = Object.keys(monthEvents).map(function (k) { return monthEvents[k]; }).sort(function (a, b) { return a.jd - b.jd; });
     $('calEvents').innerHTML = list.map(function (e) {
-      return '<span class="' + e.kind + (e.jd === selJd ? ' on' : '') + '"><b>' + e.solar[0] + '/' + e.solar[1] + '</b> ' + esc(e.title) + '</span>';
+      return '<span class="' + e.kind + (e.jd === selJd ? ' on' : '') + '"><b>' + e.solar[0] + '/' + e.solar[1] + '</b> ' + esc(Events.label(e)) + '</span>';
     }).join('');
 
     renderDay(selJd);
@@ -90,22 +104,25 @@
     var ev = monthEvents[jd];
     var hours = Lunar.luckyHours(jd).map(function (h) { return '<span><b>' + h.name + '</b> ' + h.hours + '</span>'; }).join('');
     var diff = jd - jdOf(new Date());
-    var rel = diff === 0 ? 'Hôm nay' : diff === 1 ? 'Ngày mai' : diff === -1 ? 'Hôm qua' : diff > 0 ? 'Sau ' + diff + ' ngày' : diff + ' ngày trước';
+    var rel = diff === 0 ? T('Hôm nay') : diff === 1 ? T('Ngày mai') : diff === -1 ? T('Hôm qua') : diff > 0 ? T('Sau {0} ngày', diff) :
+      T('{0} ngày trước', -diff);
+    var lunarMonth = I18n.en ? T('Tháng âm {0}', l.month) + (l.leap ? ' (leap)' : '') + ', ' + T('{0} ngày', len) :
+      'Tháng ' + Lunar.MONTH_NAMES[l.month - 1] + (l.leap ? ' nhuận' : '') + ' (' + (len === 30 ? 'đủ' : 'thiếu') + ')';
     $('calDay').innerHTML =
-      '<div class="cdRel">' + rel.replace('-', '') + '</div>' +
-      '<div class="cdSolar"><span class="cdNum">' + s[0] + '</span><span class="cdWhen">' + DAYS[d.getDay()] +
-      '<br>Tháng ' + s[1] + ', ' + s[2] + '</span></div>' +
-      '<div class="cdLunar"><span class="cdNum">' + l.day + '</span><span class="cdWhen">Tháng ' + Lunar.MONTH_NAMES[l.month - 1] +
-      (l.leap ? ' nhuận' : '') + ' (' + (len === 30 ? 'đủ' : 'thiếu') + ')<br>Năm ' + Lunar.yearName(l.year) + '</span></div>' +
-      '<div class="cdCanChi">Ngày <b>' + Lunar.dayName(jd) + '</b> · Tháng <b>' + Lunar.monthName(l.month, l.year) +
-      '</b> · Năm <b>' + Lunar.yearName(l.year) + '</b></div>' +
-      '<div class="cdStar ' + (star.good ? 'good' : 'bad') + '">' + (star.good ? 'Ngày hoàng đạo' : 'Ngày hắc đạo') +
+      '<div class="cdRel">' + rel + '</div>' +
+      '<div class="cdSolar"><span class="cdNum">' + s[0] + '</span><span class="cdWhen">' + I18n.weekday(d) +
+      '<br>' + (I18n.en ? I18n.monthName(s[1]) + ' ' + s[2] : 'Tháng ' + s[1] + ', ' + s[2]) + '</span></div>' +
+      '<div class="cdLunar"><span class="cdNum">' + l.day + '</span><span class="cdWhen">' + lunarMonth +
+      '<br>' + T('Năm {0}', I18n.yearName(l.year)) + '</span></div>' +
+      '<div class="cdCanChi">' + T('Ngày <b>{0}</b> · Tháng <b>{1}</b> · Năm <b>{2}</b>', Lunar.dayName(jd), Lunar.monthName(l.month, l.year),
+        Lunar.yearName(l.year)) + '</div>' +
+      '<div class="cdStar ' + (star.good ? 'good' : 'bad') + '">' + (star.good ? T('Ngày hoàng đạo') : T('Ngày hắc đạo')) +
       ' · ' + star.name + '</div>' +
-      '<div class="cdTerm">Tiết <b>' + Lunar.solarTerm(jd) + '</b></div>' +
-      almanacLine(s) +
-      '<div class="cdHead">Giờ hoàng đạo</div><div class="cdHours">' + hours + '</div>' +
-      (ev ? '<div class="cdEvent">' + esc(ev.title) + '</div>' : '') +
-      '<div class="cdHead">Sắp tới</div><div class="cdNext">' + nextEvents(d, jd) + '</div>';
+      '<div class="cdTerm">' + T('Tiết <b>{0}</b>', term(jd)) + '</div>' +
+      (I18n.en ? '<div class="cdOk">' + T('OK  ·  xem đầy đủ ngày này') + '</div>' : almanacLine(s)) +
+      '<div class="cdHead">' + T('Giờ hoàng đạo') + '</div><div class="cdHours">' + hours + '</div>' +
+      (ev ? '<div class="cdEvent">' + esc(Events.label(ev)) + '</div>' : '') +
+      '<div class="cdHead">' + T('Sắp tới') + '</div><div class="cdNext">' + nextEvents(d, jd) + '</div>';
   }
 
   function almanacLine(s) {
@@ -113,7 +130,7 @@
     return '<div class="cdAlm">Trực <b class="' + (a.truc.good ? 'g' : 'x') + '">' + a.truc.name + '</b> · Sao <b class="' +
       (a.tu.good ? 'g' : 'x') + '">' + a.tu.name + '</b> · ' + a.napAm + '</div>' +
       (a.warnings.length ? '<div class="cdWarn">' + esc(a.warnings[0].split(':')[0]) + '</div>' : '') +
-      '<div class="cdOk">OK  ·  xem đầy đủ ngày này</div>';
+      '<div class="cdOk">' + T('OK  ·  xem đầy đủ ngày này') + '</div>';
   }
 
   // ---- "Xem ngày": everything about one day ---------------------------------------------------
@@ -145,8 +162,21 @@
       return '<div class="dRow"><span>' + h.hours + '</span><b class="' + good(h.good) + '">' + h.name + '</b></div>';
     }).join('');
     var ev = monthEvents[jd];
+    if (I18n.en) {   // the parts that read in English; the Vietnamese almanac's advice stays in the Vietnamese screen
+      detail.innerHTML =
+        '<div class="dHead"><div class="dTitle">' + I18n.weekday(d) + ', ' + I18n.monthName(s[1]) + ' ' + s[0] + ', ' + s[2] + '</div>' +
+        '<div class="dSub">' + I18n.lunarShort(l) + ', ' + T('năm {0}', I18n.yearName(l.year)) + (ev ? '  ·  <em>' + esc(Events.label(ev)) + '</em>' : '') + '</div>' +
+        '<div class="dBadges"><span class="' + good(star.good) + '">' + (star.good ? T('Ngày hoàng đạo') : T('Ngày hắc đạo')) + ' · ' + star.name + '</span></div></div>' +
+        '<div class="dCol"><h3>' + T('Ngày') + '</h3>' +
+        row(T('Can chi'), T('Ngày {0} · Tháng {1}', Lunar.dayName(jd), Lunar.monthName(l.month, l.year))) +
+        row(T('Năm'), I18n.yearName(l.year)) + row(T('Tiết khí'), term(jd)) + '</div>' +
+        '<div class="dCol"><h3>' + T('Giờ hoàng đạo') + '</h3><div class="dHours">' + hours + '</div></div>' +
+        '<div class="dCol"><h3>' + T('Ngày này năm xưa') + '</h3><div id="dHistory"><p class="dim">' + T('Đang tải…') + '</p></div></div>' +
+        '<div class="dHint">' + T('◀ ▶ ngày trước / sau   ·   Back quay lại lịch') + '</div>';
+      return fillHistory(d, jd);
+    }
     detail.innerHTML =
-      '<div class="dHead"><div class="dTitle">' + DAYS[d.getDay()] + ', ' + s[0] + ' tháng ' + s[1] + ', ' + s[2] + '</div>' +
+      '<div class="dHead"><div class="dTitle">' + I18n.weekday(d) + ', ' + s[0] + ' tháng ' + s[1] + ', ' + s[2] + '</div>' +
       '<div class="dSub">' + Lunar.format(l) + ' năm ' + Lunar.yearName(l.year) + (ev ? '  ·  <em>' + esc(ev.title) + '</em>' : '') + '</div>' +
       '<div class="dBadges"><span class="' + good(star.good) + '">' + (star.good ? 'Ngày hoàng đạo' : 'Ngày hắc đạo') + ' · ' + star.name + '</span>' +
       '<span class="' + good(a.relation.good) + '">' + a.relation.text + ' · ' + a.relation.name + '</span>' +
@@ -175,15 +205,18 @@
       '<h3>Ngày này năm xưa</h3><div id="dHistory"><p class="dim">Đang tải…</p></div>' +
       '</div>' +
       '<div class="dHint">◀ ▶ ngày trước / sau   ·   Back quay lại lịch</div>';
-    var want = jd;
+    fillHistory(d, jd);
+  }
+
+  function fillHistory(d, want) {
     History.load(d, function (items) {
       if (!detailOpen() || jdOf(sel) !== want) return;
       var box = document.getElementById('dHistory');
       if (!box) return;
       box.innerHTML = items.length ? items.slice(0, 5).map(function (it) {
-        return '<div class="hItem"><b>' + it.year + '</b><span>' + (it.kind === 'birth' ? 'Sinh: ' : it.kind === 'death' ? 'Mất: ' : '') +
+        return '<div class="hItem"><b>' + it.year + '</b><span>' + (it.kind === 'birth' ? T('Sinh: ') : it.kind === 'death' ? T('Mất: ') : '') +
           esc(it.text) + '</span></div>';
-      }).join('') : '<p class="dim">Chưa có dữ liệu cho ngày này.</p>';
+      }).join('') : '<p class="dim">' + T('Chưa có dữ liệu cho ngày này.') + '</p>';
     });
   }
 
@@ -192,8 +225,8 @@
     return Events.upcoming(date, { horizon: 200, birthdays: opts.birthdays || [] })
       .filter(function (e) { return e.kind !== 'moon' && e.jd > jd; }).slice(0, 5)
       .map(function (e) {
-        return '<div><b>' + e.solar[0] + '/' + e.solar[1] + '</b><span>' + esc(e.title) + '</span><i>' +
-          Events.countdown(e.days).replace('Còn', 'còn') + '</i></div>';
+        return '<div><b>' + e.solar[0] + '/' + e.solar[1] + '</b><span>' + esc(Events.label(e)) + '</span><i>' +
+          Events.countdown(e.days, true) + '</i></div>';
       }).join('');
   }
 

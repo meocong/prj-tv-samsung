@@ -8,6 +8,8 @@
  *   OK                     → phím data-ok (vd. 32 = Space) cho game cần phím khác Enter
  *   Play/Pause, phím vàng  → Esc (tạm dừng / thoát ván trong game hỗ trợ)
  *   Tay cầm Bluetooth      → mũi tên, A = Enter, B = Back, Start = Esc
+ *
+ * Chữ tiếng Việt thêm vào game có thuộc tính data-en: màn hình chính đang ở tiếng Anh thì đổi sang câu đó.
  */
 (function () {
   'use strict';
@@ -19,6 +21,14 @@
 
   if (ZOOM) document.body.style.zoom = ZOOM;
   document.body.style.cursor = 'none';
+
+  // The home screen's language (Cài đặt → Ngôn ngữ), as js/i18n.js works it out.
+  try {
+    var lang = (JSON.parse(localStorage.getItem('nhaminh.settings') || '{}') || {}).language || 'auto';
+    if (lang === 'en' || (lang === 'auto' && !/^vi/i.test(navigator.language || ''))) {
+      Array.prototype.forEach.call(document.querySelectorAll('[data-en]'), function (el) { el.innerHTML = el.getAttribute('data-en'); });
+    }
+  } catch (e) { /* no storage: Vietnamese */ }
 
   function home() { location.href = '../../index.html'; }
 

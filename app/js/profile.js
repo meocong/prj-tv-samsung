@@ -112,7 +112,7 @@
 
   function state() {
     return { familyName: C.familyName, location: C.location, birthdays: C.birthdays || [], photos: p.photos.length,
-      avatar: !!p.avatar, version: root.Platform ? Platform.version() : '' };
+      avatar: !!p.avatar, version: root.Platform ? Platform.version() : '', lang: root.I18n ? I18n.lang : 'vi' };
   }
 
   /** The setup page (a file of this app), the PIN and what is set now, for the service to serve. */
@@ -151,16 +151,16 @@
         var it = items[i++];
         if (it.type === 'profile') {
           var d = it.data || {};
-          if (typeof d.familyName === 'string' && d.familyName.trim()) { p.familyName = d.familyName.trim().slice(0, 60); got.push('tên nhà'); }
+          if (typeof d.familyName === 'string' && d.familyName.trim()) { p.familyName = d.familyName.trim().slice(0, 60); got.push(T('tên nhà')); }
           if (d.location && d.location.latitude) {
             p.location = { name: String(d.location.name).slice(0, 60), latitude: +d.location.latitude,
               longitude: +d.location.longitude, timezone: d.location.timezone || 'auto' };
             var s = store.get('settings', {}) || {};
             s.location = 0;   // the new city is first in the list now
             store.set('settings', s);
-            got.push('thành phố');
+            got.push(T('thành phố'));
           }
-          if (Array.isArray(d.birthdays)) { p.birthdays = d.birthdays.slice(0, 30); got.push('sinh nhật'); }
+          if (Array.isArray(d.birthdays)) { p.birthdays = d.birthdays.slice(0, 30); got.push(T('sinh nhật')); }
           return next();
         }
         if (it.type === 'photo') {
@@ -171,10 +171,10 @@
             if (ok && it.kind === 'avatar') {
               if (p.avatar) deletePhoto(p.avatar);
               p.avatar = id;
-              got.push('ảnh avatar');
+              got.push(T('ảnh avatar'));
             } else if (ok) {
               p.photos.push(id);
-              got.push('ảnh gia đình');
+              got.push(T('ảnh gia đình'));
             }
             next();
           });
@@ -182,7 +182,7 @@
         if (it.type === 'clearPhotos') {
           p.photos.forEach(deletePhoto);
           p.photos = [];
-          got.push('xóa ảnh gia đình');
+          got.push(T('xóa ảnh gia đình'));
         }
         next();
       })();

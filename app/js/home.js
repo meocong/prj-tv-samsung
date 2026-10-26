@@ -1,8 +1,8 @@
 /*
  * tvOS style home for Samsung Tizen: black, a pinned dock row, a grid of apps and games, and one glass
  * highlight that springs between tiles. A port of webos-vibehack's app.js (MIT), itself a port of the
- * cleanyourtv launcher (MIT), with Tizen app launching, Vietnamese text, games, weather/air quality,
- * the lunar date and a Mac-style photo screensaver ("Khung ảnh").
+ * cleanyourtv launcher (MIT), with Tizen app launching, Vietnamese and English text (i18n.js), games,
+ * weather/air quality, the lunar date, an English word a day and a Mac-style photo screensaver ("Khung ảnh").
  */
 (function (root) {
   'use strict';
@@ -38,13 +38,13 @@
   var VIEW_TOP = 236, VIEW_BOTTOM = 1060;   // below the dock the top of the screen is the app's shelf
   var LONG_PRESS_MS = 600;
 
-  var DAYS = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
-  var GREETINGS = [[5, 'Chúc ngủ ngon'], [11, 'Chào buổi sáng'], [13, 'Chào buổi trưa'], [18, 'Chào buổi chiều'],
-    [22, 'Chào buổi tối'], [24, 'Chúc ngủ ngon']];
+  var GREETINGS = [[5, T('Chúc ngủ ngon')], [11, T('Chào buổi sáng')], [13, T('Chào buổi trưa')], [18, T('Chào buổi chiều')],
+    [22, T('Chào buổi tối')], [24, T('Chúc ngủ ngon')]];
 
   var ICON_INPUT = 'M18,7V4c0,-1.1 -0.9,-2 -2,-2H8C6.9,2 6,2.9 6,4v3H5v6l3,6v3h8v-3l3,-6V7H18zM8,4h8v3h-2V5h-1v2h-2V5h-1v2H8V4z';
   var ICON_LIVETV = 'M21,6h-7.59l3.29,-3.29L16,2l-4,4l-4,-4l-0.71,0.71L10.59,6H3c-1.1,0 -2,0.89 -2,2v12c0,1.1 0.9,2 2,2h18c1.1,0 2,-0.89 2,-2V8C23,6.89 22.1,6 21,6zM21,20H3V8h18V20zM9,10v8l7,-4L9,10z';
 
+  I18n.apply(document.body);   // the static text of index.html, when the screen is in English
   var stage = $('stage'), tilesEl = $('tiles'), glass = $('glass'), hero = $('hero');
   var ambients = [$('ambientA'), $('ambientB')], ambientFront = 0, ambientColor = null;
   var pills = [$('btnInputs'), $('btnCalendar'), $('btnSettings'), $('btnFamily')];
@@ -71,7 +71,10 @@
     '.9-1.4 2.3-2.6 4.5-2.6 3.8 0 5.6 4.1 4 7.4C19.4 16.5 12 21 12 21z"/></svg>';
 
   /** The family's name as HTML: ❤ becomes a drawn heart (Lexend has no glyph for it). */
-  function nameHtml(text) { return esc(text || C.familyName || '').split('❤').join(HEART); }
+  function nameHtml(text) { return esc(text || familyName()).split('❤').join(HEART); }
+
+  /** The default name of config.js reads in the screen's language; a name the family chose stays as it is. */
+  function familyName() { return T(C.familyName || ''); }
 
   var toastTimer;
   function toast(text) {
@@ -84,14 +87,23 @@
 
   // ---- items ---------------------------------------------------------------------------------
 
-  function itemId(it) { return it.kind === 'game' ? 'game:' + it.game.id : it.kind === 'news' ? 'news' : it.app.id; }
-  function itemTitle(it) { return it.kind === 'game' ? it.game.title : it.kind === 'news' ? 'Tin mới' : it.app.title; }
+  function itemId(it) { return it.kind === 'game' ? 'game:' + it.game.id : it.kind === 'news' || it.kind === 'words' ? it.kind : it.app.id; }
+  function itemTitle(it) {
+    return it.kind === 'game' ? it.game.title : it.kind === 'news' ? T('Tin mới') : it.kind === 'words' ? T('Học tiếng Anh') : it.app.title;
+  }
 
   var NEWS_ART = '<svg viewBox="0 0 256 144" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="newsBg" x1="0" y1="0" x2="1" y2="1">' +
     '<stop offset="0" stop-color="#ff7a45"/><stop offset="1" stop-color="#d6336c"/></linearGradient></defs>' +
     '<rect width="256" height="144" fill="url(#newsBg)"/><rect x="78" y="34" width="100" height="76" rx="10" fill="none" stroke="#fff" stroke-width="7"/>' +
     '<path d="M94 54h40M94 68h68M94 82h68M94 96h50" stroke="#fff" stroke-width="6" stroke-linecap="round"/>' +
     '<rect x="146" y="48" width="18" height="16" rx="3" fill="#fff"/></svg>';
+
+  var WORDS_ART = '<svg viewBox="0 0 256 144" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="wordsBg" x1="0" y1="0" x2="1" y2="1">' +
+    '<stop offset="0" stop-color="#2ec4b6"/><stop offset="1" stop-color="#3a6ff7"/></linearGradient></defs>' +
+    '<rect width="256" height="144" fill="url(#wordsBg)"/><path d="M70 36h116a12 12 0 0 1 12 12v40a12 12 0 0 1-12 12h-62l-22 18v-18H70a12 12 0 0 1-12-12V48a12 12 0 0 1 12-12z" ' +
+    'fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round"/><path d="M84 88l14-36 14 36M89 76h18" fill="none" stroke="#fff" ' +
+    'stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="138" cy="78" r="10" fill="none" stroke="#fff" stroke-width="6"/>' +
+    '<path d="M148 66v22M164 58v30" stroke="#fff" stroke-width="6" stroke-linecap="round"/><circle cx="173" cy="78" r="10" fill="none" stroke="#fff" stroke-width="6"/></svg>';
 
   /** Dock slots from config.js, then apps by how often they are opened; games on the second grid row. */
   var allApps = [];   // every app that could be shown, for Cài đặt → Ứng dụng
@@ -130,9 +142,10 @@
     var restItems = rest.map(appItem);
     var gameItems = Games.list().map(function (g) { return { kind: 'game', game: g, color: g.color }; });
     var split = Math.max(0, COLUMNS * 2 - dock.length);   // the first grid row stays apps
-    var newsItem = { kind: 'news', color: [255, 122, 69] };   // Tin mới opens the first grid row
-    var lead = restItems.slice(0, Math.max(0, split - 1));
-    var all = dock.map(appItem).concat([newsItem], lead, gameItems, restItems.slice(lead.length));
+    // Tin mới and Học tiếng Anh open the first grid row.
+    var own = [{ kind: 'news', color: [255, 122, 69] }].concat(settings.showWords ? [{ kind: 'words', color: [46, 160, 220] }] : []);
+    var lead = restItems.slice(0, Math.max(0, split - own.length));
+    var all = dock.map(appItem).concat(own, lead, gameItems, restItems.slice(lead.length));
 
     // An order arranged on the TV wins, until the dock in config.js changes.
     var saved = loadOrder();
@@ -141,7 +154,12 @@
     all.forEach(function (it) { byId[itemId(it)] = it; });
     var placed = [];
     saved.forEach(function (id) { if (byId[id]) { placed.push(byId[id]); delete byId[id]; } });
-    all.forEach(function (it) { if (byId[itemId(it)]) placed.push(it); });
+    // A tile the arranged order has never seen goes where it would be by default (Học tiếng Anh: after Tin mới).
+    all.forEach(function (it, i) {
+      if (!byId[itemId(it)]) return;
+      var prev = i > 0 ? placed.indexOf(all[i - 1]) : -1;
+      if (it.kind === 'words' && prev !== -1) placed.splice(prev + 1, 0, it); else placed.push(it);
+    });
     return placed;
   }
 
@@ -179,6 +197,8 @@
 
       if (item.kind === 'news') {
         card.innerHTML = NEWS_ART;
+      } else if (item.kind === 'words') {
+        card.innerHTML = WORDS_ART;
       } else if (item.kind === 'game') {
         card.innerHTML = item.game.art;
       } else if (item.app.icon) {
@@ -313,7 +333,7 @@
     hero.style.top = (DOCK_TOP - 28 - 52 - 101 - 30) + 'px';
     var sub = $('heroSub');
     sub.style.top = (DOCK_TOP - 28 - 62) + 'px';
-    sub.textContent = item.kind === 'game' ? item.game.desc || '' : item.app.desc || '';
+    sub.textContent = itemDesc(item);
     sub.style.opacity = '1';
     if (!heroShown) {
       hero.textContent = label;
@@ -344,10 +364,12 @@
   }
 
   function itemDesc(item) {
-    if (item.kind === 'news') return 'Tin mới nhất từ VnExpress, Thanh Niên và Dân Trí · OK để đọc';
+    if (item.kind === 'news') return I18n.en ? T('Tin mới nhất từ VnExpress International và BBC · OK để đọc') :
+      T('Tin mới nhất từ VnExpress, Thanh Niên và Dân Trí · OK để đọc');
+    if (item.kind === 'words') return T('Mỗi ngày một từ mới: phát âm, nghĩa, câu ví dụ · OK để học');
     if (item.kind === 'game') return item.game.desc || '';
     var a = item.app;
-    return a.desc || '';
+    return a.desc ? T(a.desc) : '';   // the catalog's descriptions (apps.js) are in i18n-en.js too
   }
 
   /** Below the dock the header is gone: the top of the screen names the focused tile, Apple TV style. */
@@ -411,13 +433,14 @@
 
   function open(item) {
     if (item.kind === 'news') return openNews();
+    if (item.kind === 'words') return openWords();
     if (item.kind === 'game') {
-      if (!item.game.ready) { toast(item.game.title + ' đang được hoàn thiện, sắp có'); return; }
+      if (!item.game.ready) { toast(T('{0} đang được hoàn thiện, sắp có', item.game.title)); return; }
       try { sessionStorage.setItem('nhaminh.focus', String(items.indexOf(item))); } catch (e) { /* private mode */ }
       location.href = 'games/' + item.game.id + '/index.html';
       return;
     }
-    Platform.launch(item.app.id, function () { toast('Không mở được ' + item.app.title); },
+    Platform.launch(item.app.id, function () { toast(T('Không mở được {0}', item.app.title)); },
       settings.returnHome ? [item.app.storeId, item.app.id] : null);
   }
 
@@ -459,12 +482,12 @@
   function renderTopShelf() {
     var d = topShelf.data, row = $('shelfRow'), strip = row.querySelector('.srCards');
     var hint = row.querySelector('.srHint');
-    if (hint) hint.textContent = '▲  chọn video';
+    if (hint) hint.textContent = T('▲  chọn video');
     strip.style.transform = 'none';
     var key = itemTitle(topShelf.item) + '|' + d.cards.map(function (c) { return c.id; }).join(',');
     if (strip.getAttribute('data-key') === key) return;
     strip.setAttribute('data-key', key);
-    row.children[0].innerHTML = esc(itemTitle(topShelf.item)) + '<span class="srSrc">' + esc(d.title) + '</span><span class="srHint">▲  chọn video</span>';
+    row.children[0].innerHTML = esc(itemTitle(topShelf.item)) + '<span class="srSrc">' + esc(d.title) + '</span><span class="srHint">' + esc(T('▲  chọn video')) + '</span>';
     strip.innerHTML = '';
     d.cards.forEach(function (c, i) {
       var el = document.createElement('div');
@@ -498,7 +521,7 @@
 
   function enterShelf() {
     setZone('shelf');
-    $('shelfRow').querySelector('.srHint').textContent = 'OK  xem ngay   ·   ▼  quay lại';
+    $('shelfRow').querySelector('.srHint').textContent = T('OK  xem ngay   ·   ▼  quay lại');
     focusShelfCard(topShelf.index);
   }
 
@@ -512,7 +535,7 @@
 
   function openShelfCard() {
     var c = topShelf.data.cards[topShelf.index], app = topShelf.item.app;
-    Shelf.open(c, app, function () { toast('Không mở được video, đang mở YouTube'); },
+    Shelf.open(c, app, function () { toast(T('Không mở được video, đang mở YouTube')); },
       settings.returnHome ? [app.storeId, app.id] : null);
   }
 
@@ -523,7 +546,7 @@
   function openNews() {
     setZone('news');
     $('newsView').classList.remove('hidden');
-    $('nvList').innerHTML = '<p class="dim" style="font-size:24px;color:rgba(255,255,255,.5)">Đang tải tin…</p>';
+    $('nvList').innerHTML = '<p class="dim" style="font-size:24px;color:rgba(255,255,255,.5)">' + esc(T('Đang tải tin…')) + '</p>';
     $('nvStory').innerHTML = '';
     News.load(function (list) {   // stored stories first, then the fresh ones
       var keep = newsList[newsFocus] && newsList[newsFocus].title;
@@ -531,7 +554,7 @@
       newsFocus = 0;
       list.forEach(function (n, i) { if (n.title === keep) newsFocus = i; });
       if (zone !== 'news') return;
-      if (!list.length) { $('nvList').innerHTML = '<p style="font-size:24px">Chưa tải được tin, kiểm tra mạng.</p>'; return; }
+      if (!list.length) { $('nvList').innerHTML = '<p style="font-size:24px">' + esc(T('Chưa tải được tin, kiểm tra mạng.')) + '</p>'; return; }
       $('nvList').innerHTML = list.map(function (n) {
         return '<div class="nvItem">' + (n.image ? '<img src="' + esc(n.image) + '">' : '<i></i>') + '<div><b>' + esc(n.title) + '</b><span>' + esc(n.source) +
           '  ·  ' + esc(News.ago(n.time)) + '</span></div></div>';
@@ -560,6 +583,119 @@
     focusTile(focused, true);
   }
 
+  // ---- Học tiếng Anh: one word at a time, its meanings and sentences, read aloud ----------------------
+
+  var lesson = { list: [], index: 0, entry: null, focus: 0, lines: [] };
+  var SPEAKER = '<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none"/></svg>';
+
+  function openWords() {
+    setZone('words');
+    $('wordsView').classList.remove('hidden');
+    $('wvBody').innerHTML = '<p class="wvWait">' + esc(T('Đang tải từ mới…')) + '</p>';
+    $('wvHint').textContent = '';
+    Words.today(settings.wordLevel, function (e) {
+      Words.history(function (list) {
+        learnedCount = list.length;
+        if (zone !== 'words') return;
+        if (!e) { $('wvBody').innerHTML = '<p class="wvWait">' + esc(T('Chưa tải được từ mới, kiểm tra mạng.')) + '</p>'; return; }
+        lesson.list = list;
+        lesson.index = list.length - 1;
+        for (var i = 0; i < list.length; i++) if (list[i].word === e.word) { lesson.index = i; break; }
+        showWord(e);
+      });
+    });
+  }
+
+  /** ◀ ▶ walk through every word learned; past the newest, ▶ fetches one more for today. */
+  function goWord(dir) {
+    var i = lesson.index + dir;
+    if (i < 0 || !lesson.entry) return;
+    if (i >= lesson.list.length) {
+      $('wvHint').textContent = T('Đang tìm từ mới…');
+      return Words.more(settings.wordLevel, function (e) {
+        if (!e) { toast(T('Chưa tải được từ mới, kiểm tra mạng.')); return renderWordHint(); }
+        Words.history(function (list) {
+          lesson.list = list;
+          learnedCount = list.length;
+          lesson.index = list.length - 1;
+          if (zone === 'words') showWord(e);
+        });
+      });
+    }
+    lesson.index = i;
+    Words.get(lesson.list[i].word, function (e) { if (e && zone === 'words' && lesson.index === i) showWord(e); });
+  }
+
+  function whenText(day) {
+    var p = day.split('-'), d = new Date(+p[0], +p[1] - 1, +p[2]);
+    var diff = Math.round((new Date(new Date().toDateString()) - d) / 86400000);
+    return diff === 0 ? T('Hôm nay') : diff === 1 ? T('Hôm qua') : I18n.dayMonth(d);
+  }
+
+  function showWord(e) {
+    lesson.entry = e;
+    var it = lesson.list[lesson.index] || { day: Words.dayKey(new Date()) }, vi = !I18n.en;
+    var lines = [e.word];   // what ▲ ▼ move between and OK reads aloud
+    function line(text, inner, cls) {
+      lines.push(text);
+      return '<div class="' + cls + ' wvLine" data-i="' + (lines.length - 1) + '">' + inner + '</div>';
+    }
+    function sub(t) { return vi && t ? '<small>' + esc(t) + '</small>' : ''; }
+    var html = '<div class="wvLeft">' +
+      '<div class="wvWhen">' + esc([whenText(it.day), T('từ thứ {0}', lesson.index + 1), e.topic ? T('chủ đề “{0}”', e.topic) : '']
+        .filter(Boolean).join('  ·  ')) + '</div>' +
+      '<div class="wvWord wvLine" data-i="0">' + esc(e.word) + '</div>' +
+      '<div class="wvIpa">' + esc(e.ipa || '') + SPEAKER + '</div>' +
+      (vi && e.meaning ? '<div class="wvMeaning">' + esc(e.meaning) + '</div>' : '') +
+      (vi && e.senses.length ? '<div class="wvSenses">' + e.senses.map(function (s) {
+        return '<div><b>' + esc(Words.posName(s.pos)) + '</b>' + esc(s.vi.join(', ')) + '</div>';
+      }).join('') + '</div>' : '') +
+      (e.synonyms.length ? '<div class="wvSyn"><b>' + esc(T('Từ đồng nghĩa')) + '</b>' + esc(e.synonyms.join(', ')) + '</div>' : '') +
+      '</div><div class="wvRight"><div class="wvScroll">';
+    if (e.defs.length) {
+      html += '<h3>' + esc(T('Giải nghĩa')) + '</h3>' + e.defs.slice(0, 3).map(function (d) {
+        return '<div class="wvDef"><i>' + esc(Words.posName(d.pos)) + '</i>' + esc(d.en) + sub(d.vi) +
+          (d.ex ? line(d.ex, '“' + esc(d.ex) + '”' + sub(d.exVi), 'wvEx') : '') + '</div>';
+      }).join('');
+    }
+    var inDefs = e.defs.map(function (d) { return (d.ex || '').toLowerCase(); });
+    var examples = e.examples.filter(function (x) { return inDefs.indexOf(x.en.toLowerCase()) === -1; });
+    if (examples.length) {
+      html += '<h3>' + esc(T('Câu ví dụ')) + '</h3>' + examples.slice(0, 3).map(function (x) {
+        return line(x.en, esc(x.en) + sub(x.vi), 'wvEx wvSentence');
+      }).join('');
+    }
+    $('wvBody').innerHTML = html + '</div></div>';
+    lesson.lines = lines;
+    focusWordLine(0);
+    renderWordHint();
+  }
+
+  function renderWordHint() {
+    var last = lesson.index >= lesson.list.length - 1;
+    $('wvHint').textContent = T('OK  nghe đọc (bấm lần nữa: đọc chậm)  ·  ▲ ▼  chọn câu  ·  ◀ ▶  {0}  ·  Back  đóng',
+      last ? T('từ trước / học thêm từ mới') : T('từ trước / từ sau'));
+  }
+
+  function focusWordLine(i) {
+    lesson.focus = Math.max(0, Math.min(i, lesson.lines.length - 1));
+    var els = $('wvBody').querySelectorAll('.wvLine'), on = null;
+    for (var k = 0; k < els.length; k++) {
+      var hit = Number(els[k].getAttribute('data-i')) === lesson.focus;
+      els[k].classList.toggle('focused', hit);
+      if (hit) on = els[k];
+    }
+    // Long entries: the right column slides so the chosen sentence stays in view.
+    var col = $('wvBody').querySelector('.wvScroll');
+    if (col && on) col.style.transform = 'translateY(' + (on.classList.contains('wvWord') ? 0 : -Math.max(0, on.offsetTop - 420)) + 'px)';
+  }
+
+  function closeWords() {
+    $('wordsView').classList.add('hidden');
+    zone = 'none';
+    focusTile(focused, true);
+  }
+
   // ---- top bar -------------------------------------------------------------------------------
 
   var lastDay = '';
@@ -568,7 +704,7 @@
     var mm = (m < 10 ? '0' : '') + m;
     var time = settings.clock24 ? h + ':' + mm : ((h % 12) || 12) + ':' + mm;
     $('clock').textContent = time;
-    $('ampm').textContent = settings.clock24 ? '' : (h < 12 ? 'SA' : 'CH');
+    $('ampm').textContent = settings.clock24 ? '' : (h < 12 ? T('SA') : T('CH'));
     $('frClock').textContent = time;
 
     var day = now.toDateString();
@@ -576,10 +712,9 @@
       lastDay = day;
       events = Events.upcoming(now, { birthdays: C.birthdays || [] });
       var l = Lunar.fromSolar(now.getDate(), now.getMonth() + 1, now.getFullYear());
-      $('dateLine').textContent = DAYS[now.getDay()] + '  ' + now.getDate() + ' tháng ' + (now.getMonth() + 1);
-      $('lunarLine').textContent = Lunar.format(l) + ' âm lịch  ·  năm ' + Lunar.yearName(l.year);
-      $('frDate').textContent = DAYS[now.getDay()] + ', ' + now.getDate() + ' tháng ' + (now.getMonth() + 1) +
-        '   ·   ' + Lunar.format(l) + ' âm lịch';
+      $('dateLine').textContent = I18n.dateLine(now);
+      $('lunarLine').textContent = T('{0} âm lịch  ·  năm {1}', I18n.lunarShort(l), I18n.yearName(l.year));
+      $('frDate').textContent = I18n.weekday(now) + ', ' + I18n.dayMonth(now) + '   ·   ' + T('{0} âm lịch', I18n.lunarShort(l));
     }
 
     renderEvents();
@@ -587,14 +722,12 @@
     var greet = '';
     for (var k = 0; k < GREETINGS.length; k++) { if (h < GREETINGS[k][0]) { greet = GREETINGS[k][1]; break; } }
     if (today) {
-      greet = today.kind === 'birthday' ? 'Chúc mừng ' + today.title.toLowerCase() :
-        today.title === 'Tết Nguyên Đán' ? 'Chúc mừng năm mới' : 'Chúc mừng ' + today.title;
+      greet = today.kind === 'birthday' ? T('Chúc mừng sinh nhật {0}', today.person) :
+        today.title === 'Tết Nguyên Đán' ? T('Chúc mừng năm mới') : T('Chúc mừng {0}', Events.label(today));
     }
     $('greeting').innerHTML = esc(greet) + ', ' + nameHtml();
     $('frame').classList.toggle('night', !!settings.nightDim && (h >= 23 || h < 6));
   }
-
-  var DOW = ['CN', 'Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7'];
 
   var EVENT_ICONS = {
     lunar: '<svg viewBox="0 0 24 24"><path d="M12 2v2M8 6h8l-1 2a6 6 0 0 1 1 10l-1 2H9l-1-2a6 6 0 0 1 1-10z"/><path d="M12 20v2"/></svg>',
@@ -610,7 +743,7 @@
     var picks = Events.pick(events);
     // One item per day, each kept whole, so the countdowns never run into each other.
     $('frEvents').innerHTML = picks.map(function (e) {
-      return '<span><b>' + esc(e.title) + '</b> ' + esc(Events.countdown(e.days).toLowerCase()) + '</span>';
+      return '<span><b>' + esc(Events.label(e)) + '</b> ' + esc(Events.countdown(e.days).toLowerCase()) + '</span>';
     }).join('');
     if (!settings.showLunar) { row.style.display = 'none'; return; }
     row.style.display = '';
@@ -622,8 +755,8 @@
       var chip = document.createElement('div');
       chip.className = 'evChip' + (e.days === 0 ? ' today' : '');
       chip.innerHTML = EVENT_ICONS[e.kind] + '<span class="t"></span><span class="when"></span>';
-      chip.children[1].textContent = e.title;
-      chip.children[2].textContent = Events.countdown(e.days).replace('Còn', 'còn');
+      chip.children[1].textContent = Events.label(e);
+      chip.children[2].textContent = Events.countdown(e.days, true);
       row.appendChild(chip);
     });
   }
@@ -635,11 +768,11 @@
     $('wxIcon').innerHTML = Weather.icon(d[1], w.isDay);
     $('wxTemp').textContent = w.temp + '°';
     $('wxDesc').textContent = d[0];
-    var meta = (today ? 'Cao ' + today.max + '° · Thấp ' + today.min + '°' : '') + '  ·  Ẩm ' + w.humidity + '%';
+    var meta = (today ? T('Cao {0}° · Thấp {1}°', today.max, today.min) : '') + '  ·  ' + T('Ẩm {0}%', w.humidity);
     var raining = /rain|shower|drizzle|storm/.test(d[1]);
     if (w.rainIn != null && !raining) {
       $('wxMeta').innerHTML = '<span class="rain"></span>  ·  ';
-      $('wxMeta').children[0].textContent = w.rainIn < 10 ? 'Sắp mưa' : 'Có thể mưa sau ~' + w.rainIn + ' phút';
+      $('wxMeta').children[0].textContent = w.rainIn < 10 ? T('Sắp mưa') : T('Có thể mưa sau ~{0} phút', w.rainIn);
       $('wxMeta').appendChild(document.createTextNode(meta.replace(/^ {2}· {2}/, '')));
     } else {
       $('wxMeta').textContent = meta.replace(/^ {2}· {2}/, '');
@@ -653,7 +786,7 @@
       var el = document.createElement('div');
       el.className = 'wxDay';
       el.innerHTML = '<span></span>' + Weather.icon(Weather.describe(day.code)[1], true) + '<b></b><span></span>';
-      el.children[0].textContent = DOW[new Date(day.date + 'T12:00:00').getDay()];
+      el.children[0].textContent = I18n.dow(new Date(day.date + 'T12:00:00').getDay());
       el.children[2].textContent = day.max + '°';
       el.children[3].textContent = day.min + '°';
       days.appendChild(el);
@@ -676,13 +809,13 @@
       inputs.forEach(function (inp) {
         var name = (C.inputNames || {})[inp.label];   // "HDMI 1" → "Đầu thu", set in config.js
         addInputRow(panel, ICON_INPUT, name || inp.label, (name ? inp.label + (inp.connected ? ' · ' : '') : '') +
-          (inp.connected ? 'Đã kết nối' : ''), function () {
-          Platform.setInput(inp, function () { toast('Không chuyển được — bấm nút Source trên remote'); });
+          (inp.connected ? T('Đã kết nối') : ''), function () {
+          Platform.setInput(inp, function () { toast(T('Không chuyển được — bấm nút Source trên remote')); });
         });
       });
       if (inputRows.length) panel.appendChild(Object.assign(document.createElement('div'), { className: 'separator' }));
-      addInputRow(panel, ICON_LIVETV, 'Truyền hình', '', function () {
-        Platform.watchTv(function () { toast('Không mở được truyền hình'); });
+      addInputRow(panel, ICON_LIVETV, T('Truyền hình'), '', function () {
+        Platform.watchTv(function () { toast(T('Không mở được truyền hình')); });
       });
       var r = pills[0].getBoundingClientRect();
       panel.style.left = r.left + 'px';
@@ -737,57 +870,60 @@
   }
 
   function onOff(key, label, apply, words) {
-    words = words || ['Bật', 'Tắt'];
+    words = words || [T('Bật'), T('Tắt')];
     return choice(key, label, [[true, words[0]], [false, words[1]]], apply);
   }
 
+  var SHOW = [T('Hiện'), T('Ẩn')];
+
   var screensaverPage = {
-    title: 'Màn hình chờ',
+    title: T('Màn hình chờ'),
     rows: function () {
       return [
-        choice('screensaverAfter', 'Bật sau', [[0, 'Không bao giờ'], [1, '1 phút'], [3, '3 phút'], [5, '5 phút'], [10, '10 phút'], [30, '30 phút']]),
-        choice('photoSource', 'Ảnh', [['bing', 'Bing mỗi ngày'], ['mix', 'Bing + Wikimedia']], function () { if (backdrop) backdrop.reload(); }),
-        choice('photoInterval', 'Đổi ảnh sau', [[20, '20 giây'], [30, '30 giây'], [60, '1 phút'], [120, '2 phút']]),
-        onOff('nightDim', 'Ban đêm tối hơn (23:00–6:00)'),
-        { label: 'Xem thử', run: function () { closeSettings(); enterFrame(); } }
+        choice('screensaverAfter', T('Bật sau'), [[0, T('Không bao giờ')], [1, T('1 phút')], [3, T('3 phút')], [5, T('5 phút')],
+          [10, T('10 phút')], [30, T('30 phút')]]),
+        choice('photoSource', T('Ảnh'), [['bing', T('Bing mỗi ngày')], ['mix', T('Bing + Wikimedia')]], function () { if (backdrop) backdrop.reload(); }),
+        choice('photoInterval', T('Đổi ảnh sau'), [[20, T('20 giây')], [30, T('30 giây')], [60, T('1 phút')], [120, T('2 phút')]]),
+        onOff('nightDim', T('Ban đêm tối hơn (23:00–6:00)')),
+        { label: T('Xem thử'), run: function () { closeSettings(); enterFrame(); } }
       ];
     }
   };
 
   var homePage = {
-    title: 'Màn hình chính',
+    title: T('Màn hình chính'),
     rows: function () {
       return [
-        onOff('returnHome', 'Thoát app thì về đây', null, ['Bật', 'Tắt']),
-        choice('closeHidden', 'Đóng app chạy ngầm', [[5, 'Sau 5 phút'], [15, 'Sau 15 phút'], [0, 'Không']],
+        onOff('returnHome', T('Thoát app thì về đây')),
+        choice('closeHidden', T('Đóng app chạy ngầm'), [[5, T('Sau 5 phút')], [15, T('Sau 15 phút')], [0, T('Không')]],
           function () { Platform.setServiceOption('closeAfter', settings.closeHidden); }),
-        choice('columns', 'Số ô mỗi hàng', [[4, '4 (lớn)'], [5, '5'], [6, '6 (nhiều app)']], function () { setGeometry(); loadApps(); }),
-        choice('clock24', 'Đồng hồ', [[true, '24 giờ'], [false, '12 giờ']], updateClockNow),
-        choice('wallpaper', 'Hình nền', [['photo', 'Ảnh đẹp mỗi ngày'], ['mix', 'Ảnh đẹp + ảnh gia đình'], ['family', 'Ảnh gia đình'],
-          ['sky', 'Bầu trời theo giờ'], ['black', 'Đen (như Apple TV)']], applyWallpaper),
-        choice('wallpaperEvery', 'Đổi hình nền', [[5, 'Mỗi 5 phút'], [15, 'Mỗi 15 phút'], [30, 'Mỗi 30 phút'], [60, 'Mỗi giờ'],
-          [180, 'Mỗi 3 giờ'], [0, 'Mỗi ngày']],
+        choice('columns', T('Số ô mỗi hàng'), [[4, T('4 (lớn)')], [5, '5'], [6, T('6 (nhiều app)')]], function () { setGeometry(); loadApps(); }),
+        choice('clock24', T('Đồng hồ'), [[true, T('24 giờ')], [false, T('12 giờ')]], updateClockNow),
+        choice('wallpaper', T('Hình nền'), [['photo', T('Ảnh đẹp mỗi ngày')], ['mix', T('Ảnh đẹp + ảnh gia đình')], ['family', T('Ảnh gia đình')],
+          ['sky', T('Bầu trời theo giờ')], ['black', T('Đen (như Apple TV)')]], applyWallpaper),
+        choice('wallpaperEvery', T('Đổi hình nền'), [[5, T('Mỗi 5 phút')], [15, T('Mỗi 15 phút')], [30, T('Mỗi 30 phút')], [60, T('Mỗi giờ')],
+          [180, T('Mỗi 3 giờ')], [0, T('Mỗi ngày')]],
           function () { nextWallpaper(); }),
-        { label: 'Chọn hình nền', value: function () { return settings.wallpaperPin ? 'Đang giữ cố định' : ''; },
+        { label: T('Chọn hình nền'), value: function () { return settings.wallpaperPin ? T('Đang giữ cố định') : ''; },
           run: function () { closeSettings(); openGallery(); } },
-        { label: 'Đổi hình nền ngay', run: function () { unpinQuietly(); nextWallpaper(); toast('Đang đổi hình nền'); } },
-        onOff('showLunar', 'Âm lịch và ngày lễ', function () { eventsKey = ''; applyVisibility(); renderEvents(); }, ['Hiện', 'Ẩn']),
-        onOff('showWeather', 'Thời tiết và AQI', applyVisibility, ['Hiện', 'Ẩn']),
-        onOff('showToday', 'Ngày này năm xưa, câu nói, tin mới', showToday, ['Hiện', 'Ẩn']),
-        onOff('showMarkets', 'Giá vàng, tỷ giá', refreshToday, ['Hiện', 'Ẩn']),
-        onOff('showStats', 'CPU và bộ nhớ dưới đồng hồ', function () { applyVisibility(); updateStats(); }, ['Hiện', 'Ẩn']),
-        { label: 'Sắp xếp ứng dụng như ban đầu', run: function () { S.set(ORDER_KEY, null); closeSettings(); loadApps(); toast('Đã sắp xếp lại'); } }
+        { label: T('Đổi hình nền ngay'), run: function () { unpinQuietly(); nextWallpaper(); toast(T('Đang đổi hình nền')); } },
+        onOff('showLunar', T('Âm lịch và ngày lễ'), function () { eventsKey = ''; applyVisibility(); renderEvents(); }, SHOW),
+        onOff('showWeather', T('Thời tiết và AQI'), applyVisibility, SHOW),
+        onOff('showToday', T('Ngày này năm xưa, câu nói, tin mới'), showToday, SHOW),
+        onOff('showMarkets', T('Giá vàng, tỷ giá'), refreshToday, SHOW),
+        onOff('showStats', T('CPU và bộ nhớ dưới đồng hồ'), function () { applyVisibility(); updateStats(); }, SHOW),
+        { label: T('Sắp xếp ứng dụng như ban đầu'), run: function () { S.set(ORDER_KEY, null); closeSettings(); loadApps(); toast(T('Đã sắp xếp lại')); } }
       ];
     }
   };
 
   var appsPage = {
-    title: 'Ứng dụng',
+    title: T('Ứng dụng'),
     rows: function () {
       return allApps.map(function (a) {
         return {
           label: a.title,
-          value: function () { return settings.hiddenApps.indexOf(a.id) === -1 ? 'Hiện' : 'Ẩn'; },
+          value: function () { return settings.hiddenApps.indexOf(a.id) === -1 ? T('Hiện') : T('Ẩn'); },
           change: function () {
             var i = settings.hiddenApps.indexOf(a.id);
             if (i === -1) settings.hiddenApps.push(a.id); else settings.hiddenApps.splice(i, 1);
@@ -800,53 +936,97 @@
   };
 
   var weatherPage = {
-    title: 'Thời tiết',
+    title: T('Thời tiết'),
     rows: function () {
       return (C.locations || [C.location]).map(function (loc, i) {
         return {
           label: loc.name,
           value: function () { return settings.location === i ? '✓' : ''; },
-          run: function () { settings.location = i; saveSettings(); weatherFeed.refresh(); renderSettings(); toast('Thời tiết: ' + loc.name); }
+          run: function () { settings.location = i; saveSettings(); weatherFeed.refresh(); renderSettings(); toast(T('Thời tiết: {0}', loc.name)); }
+        };
+      });
+    }
+  };
+
+  var LEVELS = [['basic', T('Cơ bản')], ['middle', T('Trung cấp')], ['advanced', T('Nâng cao')]];
+
+  var wordsPage = {
+    title: T('Học tiếng Anh'),
+    rows: function () {
+      return [
+        onOff('showWords', T('Từ mới mỗi ngày'), function () { appsChanged = true; loadWord(); }, SHOW),
+        choice('wordLevel', T('Trình độ'), LEVELS),
+        { label: T('Mở Học tiếng Anh'), run: function () { closeSettings(); openWords(); } },
+        { label: T('Đã học'), value: function () { return T('{0} từ', learnedCount); }, info: true }
+      ];
+    }
+  };
+
+  // Always in both languages, so whoever set the wrong one can still find the way back.
+  var languagePage = {
+    title: 'Ngôn ngữ / Language',
+    rows: function () {
+      return [['auto', T('Theo ngôn ngữ của TV')], ['vi', 'Tiếng Việt'], ['en', 'English']].map(function (o) {
+        return {
+          label: o[1],
+          value: function () { return (settings.language || 'auto') === o[0] ? '✓' : ''; },
+          run: function () {
+            if ((settings.language || 'auto') === o[0]) return;
+            settings.language = o[0];
+            saveSettings();
+            location.reload();
+          }
         };
       });
     }
   };
 
   var infoPage = {
-    title: 'Thông tin',
+    title: T('Thông tin'),
     rows: function () {
       var rows = [];
       function info(label, value) { rows.push({ label: label, value: function () { return value; }, info: true }); }
-      info('Màn hình chính', (C.familyName || '') + ' · bản ' + Platform.version());
+      info(T('Màn hình chính'), familyName() + ' · ' + T('bản {0}', Platform.version()));
       var up = S.get('update', null);
-      if (up && up.latest && newer(up.latest, Platform.version())) info('Có bản mới ' + up.latest, 'cài bằng Apps2Samsung (xem README trên GitHub)');
+      if (up && up.latest && newer(up.latest, Platform.version())) info(T('Có bản mới {0}', up.latest), T('cài bằng Apps2Samsung (xem README trên GitHub)'));
       var d = deviceInfo;
       if (d.model) info('TV', d.model);
-      if (d.firmware) info('Phần mềm TV', d.firmware);
-      if (d.network) info('Mạng', d.network);
-      if (d.ip) info('Địa chỉ IP', d.ip);
-      if (d.storage) info('Bộ nhớ trống', d.storage);
-      info('Phím tắt', 'Xanh lá: hình nền · Vàng: màn hình chờ · Xanh dương: cài đặt');
-      info('Mở lại / tải lại', (S.get('resumes', 0) || 0) + ' / ' + (S.get('boots', 0) || 0));
-      rows.push({ label: 'Tải lại màn hình chính', run: function () { location.reload(); } });
+      if (d.firmware) info(T('Phần mềm TV'), d.firmware);
+      if (d.network) info(T('Mạng'), d.network);
+      if (d.ip) info(T('Địa chỉ IP'), d.ip);
+      if (d.storage) info(T('Bộ nhớ trống'), d.storage);
+      info(T('Phím tắt'), T('Xanh lá: hình nền · Vàng: màn hình chờ · Xanh dương: cài đặt'));
+      info(T('Mở lại / tải lại'), (S.get('resumes', 0) || 0) + ' / ' + (S.get('boots', 0) || 0));
+      rows.push({ label: T('Tải lại màn hình chính'), run: function () { location.reload(); } });
       return rows;
     }
   };
 
+  function choiceText(values, v) {
+    for (var i = 0; i < values.length; i++) if (values[i][0] === v) return values[i][1];
+    return values[0][1];
+  }
+
   var rootPage = {
-    title: 'Cài đặt',
+    title: T('Cài đặt'),
     rows: function () {
       return [
-        { label: 'Màn hình chờ', open: screensaverPage, value: function () { return settings.screensaverAfter ? 'Sau ' + settings.screensaverAfter + ' phút' : 'Tắt'; } },
-        { label: 'Màn hình chính', open: homePage },
-        { label: 'Ứng dụng', open: appsPage, value: function () { return (allApps.length - settings.hiddenApps.length) + ' đang hiện'; } },
-        { label: 'Thời tiết', open: weatherPage, value: function () { return currentLocation().name; } },
-        { label: 'Cài đặt bằng điện thoại / máy tính', value: function () { return 'Tên nhà, thành phố, ảnh'; },
+        { label: T('Màn hình chờ'), open: screensaverPage, value: function () {
+          return settings.screensaverAfter ? T('Sau {0} phút', settings.screensaverAfter) : T('Tắt');
+        } },
+        { label: T('Màn hình chính'), open: homePage },
+        { label: T('Ứng dụng'), open: appsPage, value: function () { return T('{0} đang hiện', allApps.length - settings.hiddenApps.length); } },
+        { label: T('Thời tiết'), open: weatherPage, value: function () { return currentLocation().name; } },
+        { label: T('Học tiếng Anh'), open: wordsPage, value: function () {
+          return settings.showWords ? choiceText(LEVELS, settings.wordLevel) : T('Tắt');
+        } },
+        { label: T('Cài đặt bằng điện thoại / máy tính'), value: function () { return T('Tên nhà, thành phố, ảnh'); },
           run: function () { closeSettings(); openSetup(); } },
-        { label: 'Thông tin', open: infoPage },
-        { label: 'Xem màn hình chờ ngay', run: function () { closeSettings(); enterFrame(); } },
-        { label: 'Cài đặt TV', value: function () { return 'Hẹn giờ tắt, hình, tiếng'; }, run: function () {
-          Platform.openTvSettings(function () { toast('Bấm nút Cài đặt (⚙) trên remote để mở cài đặt TV'); });
+        { label: 'Ngôn ngữ / Language', open: languagePage, value: function () { return I18n.en ? 'English' : 'Tiếng Việt'; } },
+        { label: T('Thông tin'), open: infoPage },
+        { label: T('Xem màn hình chờ ngay'), run: function () { closeSettings(); enterFrame(); } },
+        { label: T('Cài đặt TV'), value: function () { return T('Hẹn giờ tắt, hình, tiếng'); }, run: function () {
+          Platform.openTvSettings(function () { toast(T('Bấm nút Cài đặt (⚙) trên remote để mở cài đặt TV')); });
         } }
       ];
     }
@@ -936,7 +1116,7 @@
     Platform.stats(function (st) {
       var parts = [];
       if (st.cpu != null) parts.push('CPU ' + st.cpu + '%');
-      if (st.storage) parts.push('Trống ' + st.storage);
+      if (st.storage) parts.push(T('Trống {0}', st.storage));
       el.textContent = parts.join('  ·  ');
     });
   }
@@ -952,7 +1132,7 @@
 
   // ---- "Hôm nay" block: on this day · a saying · the latest news, rotating every 15 s ------------
 
-  var todayItems = [], todayIndex = 0, history = [], news = [], markets = null;
+  var todayItems = [], todayIndex = 0, history = [], news = [], markets = null, word = null, learnedCount = 0;
 
   function refreshToday() {
     var now = new Date();
@@ -960,30 +1140,51 @@
     News.load(function (items) { news = items; buildToday(); });
     if (settings.showMarkets) Markets.load(function (m) { markets = m; buildToday(); });
     Quotes.load();
+    loadWord();
     buildToday();
   }
 
+  /** Today's English word, for the Hôm nay block and the screensaver (chosen and fetched once a day). */
+  function loadWord() {
+    if (!settings.showWords) { word = null; renderFrameWord(); return buildToday(); }
+    Words.today(settings.wordLevel, function (e) { word = e; buildToday(); renderFrameWord(); });
+    Words.history(function (list) { learnedCount = list.length; });
+  }
+
+  function wordPos(e) { return e.senses.length ? e.senses[0].pos : e.defs.length ? e.defs[0].pos : ''; }
+
+  /** "kitchen  /ˈkɪtʃən/  (n): nhà bếp" — in English the meaning is the first definition. */
+  function wordLine(e, withMeaning) {
+    var pos = wordPos(e), mean = I18n.en ? (e.defs[0] ? e.defs[0].en : '') : e.meaning || (e.defs[0] && e.defs[0].vi) || '';
+    return e.word + (e.ipa ? '  ' + e.ipa : '') + (pos ? '  (' + Words.posShort(pos) + ')' : '') + (withMeaning && mean ? ': ' + mean : '');
+  }
+
   function buildToday() {
+    var now = new Date();
     // Sayings are drawn when shown, so each round brings a new one.
-    var list = [{ label: 'Câu nói hay', quote: true }, { label: 'Câu nói hay', quote: true }, { label: 'Câu nói hay', quote: true }];
+    var quotes = [0, 1, 2].map(function () { return { label: T('Câu nói hay'), quote: true }; });
+    var past = [], fresh = [];
     var events = history.filter(function (h) { return h.kind === 'event'; });
     var births = history.filter(function (h) { return h.kind === 'birth'; });
     // A different event each time the block comes round, and now and then someone born today.
     for (var i = 0; i < Math.min(3, events.length); i++) {
-      var e = events[(i * 3 + new Date().getHours()) % events.length];
-      list.push({ label: 'Ngày này năm xưa · ' + e.year, text: e.text, meta: (new Date().getFullYear() - e.year) + ' năm trước' });
+      var e = events[(i * 3 + now.getHours()) % events.length];
+      past.push({ label: T('Ngày này năm xưa · {0}', e.year), text: e.text, meta: T('{0} năm trước', now.getFullYear() - e.year) });
     }
     if (births.length) {
-      var b = births[new Date().getHours() % births.length];
-      list.push({ label: 'Sinh ngày này · ' + b.year, text: b.text, meta: '' });
+      var b = births[now.getHours() % births.length];
+      past.push({ label: T('Sinh ngày này · {0}', b.year), text: b.text, meta: '' });
     }
-    news.slice(0, 3).forEach(function (n) { list.push({ label: 'Tin mới · ' + n.source, text: n.title, meta: News.ago(n.time) }); });
-    // Interleave so the saying, history, news and gold / exchange rate alternate.
+    news.slice(0, 3).forEach(function (n) { fresh.push({ label: T('Tin mới · {0}', n.source), text: n.title, meta: News.ago(n.time) }); });
+    var lesson = [];
+    if (word) {
+      // A definition's own sentence first: it shows the meaning on screen; the extra sentences can be fragments.
+      var ex = word.defs.filter(function (d) { return d.ex; }).map(function (d) { return { en: d.ex }; })[0] || word.examples[0];
+      lesson.push({ label: T('Từ tiếng Anh hôm nay'), text: wordLine(word, true), meta: ex ? '“' + ex.en + '”' : '' });
+    }
+    // Interleave so the saying, history, news, the English word and gold / exchange rate alternate.
     todayItems = [];
-    var groups = [list.filter(function (x) { return x.label.indexOf('Câu') === 0; }),
-      list.filter(function (x) { return x.label.indexOf('Ngày này') === 0 || x.label.indexOf('Sinh') === 0; }),
-      list.filter(function (x) { return x.label.indexOf('Tin') === 0; }),
-      settings.showMarkets ? Markets.cards(markets) : []];
+    var groups = [quotes, past, fresh, lesson, settings.showMarkets ? Markets.cards(markets) : []];
     for (var k = 0; k < 6; k++) groups.forEach(function (g) { if (g[k]) todayItems.push(g[k]); });
     if (!$('today').classList.contains('shown')) showToday();
   }
@@ -1014,6 +1215,9 @@
     var q = Quotes.next();
     $('frQuote').textContent = '“' + q.text + '” — ' + q.by;
   }
+
+  /** The English word of the day, small, under the screensaver's saying. */
+  function renderFrameWord() { $('frWord').textContent = word ? T('Từ hôm nay: {0}', wordLine(word, true)) : ''; }
   setInterval(function () { if (zone === 'frame') nextFrameQuote(); }, 60000);
 
   // ---- wallpaper -------------------------------------------------------------------------------
@@ -1023,7 +1227,7 @@
   var WALL_KEY = 'wall';   // {url, at, mode}: the photo on screen and when it came, kept across restarts
 
   function familyPool() {
-    return (C.familyPhotos || []).map(function (url) { return { url: url, title: C.familyName || '', date: '0000-00-00' }; });
+    return (C.familyPhotos || []).map(function (url) { return { url: url, title: familyName(), date: '0000-00-00' }; });
   }
 
   /** Photos for the current mode: Bing ('photo'), the family's own ('family'), or two Bing then one family ('mix'). */
@@ -1247,7 +1451,7 @@
 
   function everyText() {
     var m = settings.wallpaperEvery;
-    return !m ? 'mỗi ngày' : m % 60 === 0 ? (m === 60 ? 'mỗi giờ' : 'mỗi ' + m / 60 + ' giờ') : 'mỗi ' + m + ' phút';
+    return !m ? T('mỗi ngày') : m % 60 === 0 ? (m === 60 ? T('mỗi giờ') : T('mỗi {0} giờ', m / 60)) : T('mỗi {0} phút', m);
   }
 
   /** Bing's own 640×360 copy for the grid (42 KB instead of 400). */
@@ -1269,17 +1473,17 @@
   }
 
   function captionOf(p) {
-    if (p.date === '0000-00-00') return 'Ảnh gia đình';
-    var t = (p.title || '').split(' (©')[0];
+    if (p.date === '0000-00-00') return T('Ảnh gia đình');
+    var t = Backdrop.caption(p).split(' (©')[0];
     return (p.date ? p.date.slice(8, 10) + '/' + p.date.slice(5, 7) + '  ·  ' : '') + t;
   }
 
   function renderGallery() {
     $('gallery').querySelector('.glSub').textContent = settings.wallpaperPin ?
-      'Đang giữ cố định một ảnh  ·  OK để đổi hoặc bỏ cố định  ·  Back để đóng' :
-      gallery.list.length + ' ảnh, tự đổi ' + everyText() + '  ·  OK để chọn  ·  Back để đóng';
+      T('Đang giữ cố định một ảnh  ·  OK để đổi hoặc bỏ cố định  ·  Back để đóng') :
+      T('{0} ảnh, tự đổi {1}  ·  OK để chọn  ·  Back để đóng', gallery.list.length, everyText());
     $('glGrid').innerHTML = gallery.list.map(function (p) {
-      var badge = p.url === settings.wallpaperPin ? 'Cố định' : p.url === wallUrl ? 'Đang dùng' : '';
+      var badge = p.url === settings.wallpaperPin ? T('Cố định') : p.url === wallUrl ? T('Đang dùng') : '';
       return '<div class="glItem"><div class="glImg"><img data-src="' + esc(thumbOf(p.url)) + '">' +
         (badge ? '<span class="glBadge">' + badge + '</span>' : '') + '</div><div class="glCap">' + esc(captionOf(p)) + '</div></div>';
     }).join('');
@@ -1304,14 +1508,14 @@
 
   function galleryMenu() {
     var p = gallery.list[gallery.focus], rows = [
-      { label: 'Dùng ảnh này', sub: 'đến hạn vẫn tự đổi', run: function () { useWallpaper(p, false); } },
-      { label: 'Giữ cố định ảnh này', sub: 'không tự đổi nữa', run: function () { useWallpaper(p, true); } }
+      { label: T('Dùng ảnh này'), sub: T('đến hạn vẫn tự đổi'), run: function () { useWallpaper(p, false); } },
+      { label: T('Giữ cố định ảnh này'), sub: T('không tự đổi nữa'), run: function () { useWallpaper(p, true); } }
     ];
-    if (settings.wallpaperPin) rows.push({ label: 'Bỏ cố định', sub: 'tự đổi lại như cũ', run: function () {
+    if (settings.wallpaperPin) rows.push({ label: T('Bỏ cố định'), sub: T('tự đổi lại như cũ'), run: function () {
       settings.wallpaperPin = '';
       saveSettings();
       closeGallery();
-      toast('Hình nền sẽ tự đổi lại');
+      toast(T('Hình nền sẽ tự đổi lại'));
     } });
     gallery.menu = rows;
     gallery.menuFocus = 0;
@@ -1337,8 +1541,7 @@
       buildPool(setPool);
     }
     if (p.url !== wallUrl) showPhoto(p.url, false); else { wallAt = Date.now(); S.set(WALL_KEY, { url: p.url, at: wallAt, mode: settings.wallpaper }); }
-    toast(keep ? 'Đã giữ cố định hình nền này' :
-      'Đã đổi hình nền  ·  tự đổi ' + everyText());
+    toast(keep ? T('Đã giữ cố định hình nền này') : T('Đã đổi hình nền  ·  tự đổi {0}', everyText()));
   }
 
   /** Changing the photo on purpose (green key, "Đổi hình nền ngay") ends a pin. */
@@ -1417,7 +1620,7 @@
     pills.forEach(function (el) { el.classList.remove('focused'); });
     zone = 'setup';
     $('spPin').textContent = Profile.pin().replace(/(\d{3})(\d{3})/, '$1 $2');
-    $('spGot').textContent = 'Đặt được tên nhà, thành phố, ảnh gia đình, ảnh avatar và sinh nhật.';
+    $('spGot').textContent = T('Đặt được tên nhà, thành phố, ảnh gia đình, ảnh avatar và sinh nhật.');
     $('setupPanel').classList.remove('hidden');
     Profile.publish();
     Platform.network(function (n) {
@@ -1441,9 +1644,9 @@
   function syncProfile() {
     Profile.sync(function (got) {
       if (!got.length) return;
-      var text = 'Đã nhận: ' + got.filter(function (g, i) { return got.indexOf(g) === i; }).join(', ');
+      var text = T('Đã nhận: {0}', got.filter(function (g, i) { return got.indexOf(g) === i; }).join(', '));
       setupReload = true;
-      if (zone === 'setup') { $('spGot').textContent = text + '. Back để áp dụng.'; return; }
+      if (zone === 'setup') { $('spGot').textContent = text + '. ' + T('Back để áp dụng.'); return; }
       toast(text);
       setTimeout(function () { if (zone !== 'setup') location.reload(); }, 1800);
     });
@@ -1480,9 +1683,9 @@
         interval: function () { return settings.photoInterval; },
         motion: function () { return false; },   // a zooming 1920×1080 layer leaves black tiles on this TV
         extra: (C.familyPhotos || []).map(function (url) {
-          return { url: url, title: C.familyName || '', credit: '', date: '0000-00-00', source: '' };
+          return { url: url, title: familyName(), credit: '', date: '0000-00-00', source: '' };
         }),
-        onPhoto: function (p) { $('frCaption').innerHTML = nameHtml([p.title, p.credit].filter(Boolean).join('  ·  ')); }
+        onPhoto: function (p) { $('frCaption').innerHTML = nameHtml([Backdrop.caption(p), p.credit].filter(Boolean).join('  ·  ')); }
       });
       backdrop.start();
     } else {
@@ -1509,7 +1712,8 @@
 
   setInterval(function () {
     var mins = settings.screensaverAfter;
-    if (mins && zone !== 'frame' && zone !== 'calendar' && zone !== 'news' && zone !== 'gallery' && zone !== 'setup' && !document.hidden && Date.now() - lastInput > mins * 60000) enterFrame();
+    if (mins && ['frame', 'calendar', 'news', 'words', 'gallery', 'setup'].indexOf(zone) === -1 && !document.hidden &&
+      Date.now() - lastInput > mins * 60000) enterFrame();
   }, 5000);
 
   // ---- rearranging ---------------------------------------------------------------------------
@@ -1521,7 +1725,7 @@
     editing = { item: it, snapshot: items.slice() };
     it.el.classList.add('moving');
     document.body.classList.add('editing');
-    toast('Mũi tên để di chuyển  ·  OK để đặt  ·  Back để hủy');
+    toast(T('Mũi tên để di chuyển  ·  OK để đặt  ·  Back để hủy'));
   }
 
   function moveTo(to) {
@@ -1602,6 +1806,13 @@
       if (k === 'up') focusNews(newsFocus - 1);
       else if (k === 'down') focusNews(newsFocus + 1);
       else if (k === 'back' || k === 'left') closeNews();
+    } else if (zone === 'words') {
+      if (k === 'up') focusWordLine(lesson.focus - 1);
+      else if (k === 'down') focusWordLine(lesson.focus + 1);
+      else if (k === 'left') goWord(-1);
+      else if (k === 'right') goWord(1);
+      else if (k === 'ok') { if (lesson.lines.length) Words.speak(lesson.lines[lesson.focus]); }
+      else if (k === 'back') closeWords();
     } else if (zone === 'top') {
       if (k === 'left') focusPill(pillFocus - 1);
       else if (k === 'right') focusPill(pillFocus + 1);
@@ -1630,7 +1841,7 @@
   });
 
   function closePanels() {
-    ['settings', 'inputsPanel'].forEach(function (id) { $(id).classList.add('hidden'); });
+    ['settings', 'inputsPanel', 'newsView', 'wordsView'].forEach(function (id) { $(id).classList.add('hidden'); });
   }
 
   function activatePill(i) {

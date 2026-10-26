@@ -59,7 +59,7 @@
     if (!(vnd > 0)) return null;
     var eurPerUsd = json.rates.EUR;
     return { usd: { transfer: vnd, sell: null, cash: null }, eur: eurPerUsd > 0 ? vnd / eurPerUsd : null,
-      source: 'tỷ giá thị trường', updated: '' };
+      source: T('tỷ giá thị trường'), updated: '' };
   }
 
   function getText(url, cb) {
@@ -99,9 +99,10 @@
     });
   }
 
-  /** "141,7" (one decimal, Vietnamese comma) and "25.670" (thousands with dots). */
-  function million(v) { return v.toFixed(1).replace('.', ','); }
-  function vnd(v) { return Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+  // "141,7" (one decimal, Vietnamese comma) and "25.670" (thousands with dots); 141.7 and 25,670 in English.
+  var EN = root.I18n && I18n.en;
+  function million(v) { return EN ? v.toFixed(1) : v.toFixed(1).replace('.', ','); }
+  function vnd(v) { return Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, EN ? ',' : '.'); }
 
   /** The "Hôm nay" cards for what we have. */
   function cards(m) {
@@ -109,19 +110,18 @@
     if (m && m.gold && (m.gold.bar || m.gold.ring)) {
       var g = m.gold, main = g.bar || g.ring;
       out.push({
-        label: 'Giá vàng · ' + g.source,
-        text: (g.bar ? 'Vàng miếng SJC' : 'Nhẫn trơn 999.9') + ': mua ' + million(main.buy) + ' · bán ' + million(main.sell) +
-          ' triệu/lượng',
-        meta: [g.bar && g.ring ? 'Nhẫn trơn 999.9: ' + million(g.ring.buy) + ' · ' + million(g.ring.sell) : '',
-          g.updated ? 'cập nhật ' + g.updated : ''].filter(Boolean).join('  ·  ')
+        label: T('Giá vàng · {0}', g.source),
+        text: T('{0}: mua {1} · bán {2} triệu/lượng', g.bar ? T('Vàng miếng SJC') : T('Nhẫn trơn 999.9'), million(main.buy), million(main.sell)),
+        meta: [g.bar && g.ring ? T('Nhẫn trơn 999.9') + ': ' + million(g.ring.buy) + ' · ' + million(g.ring.sell) : '',
+          g.updated ? T('cập nhật {0}', g.updated) : ''].filter(Boolean).join('  ·  ')
       });
     }
     if (m && m.usd && m.usd.usd) {
       var u = m.usd.usd;
       out.push({
-        label: 'Tỷ giá · ' + m.usd.source,
-        text: '1 USD = ' + vnd(u.transfer) + ' ₫' + (u.sell ? ' · bán ' + vnd(u.sell) + ' ₫' : ''),
-        meta: [m.usd.eur ? '1 EUR = ' + vnd(m.usd.eur) + ' ₫' : '', m.usd.updated ? 'cập nhật ' + m.usd.updated : '']
+        label: T('Tỷ giá · {0}', m.usd.source),
+        text: '1 USD = ' + vnd(u.transfer) + ' ₫' + (u.sell ? ' · ' + T('bán {0} ₫', vnd(u.sell)) : ''),
+        meta: [m.usd.eur ? '1 EUR = ' + vnd(m.usd.eur) + ' ₫' : '', m.usd.updated ? T('cập nhật {0}', m.usd.updated) : '']
           .filter(Boolean).join('  ·  ')
       });
     }

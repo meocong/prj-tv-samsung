@@ -72,10 +72,10 @@
   //   2048 — gabrielecirulli/2048 (MIT) · Xếp gạch — jakesgordon/javascript-tetris (MIT)
   //   Rắn săn mồi — jakesgordon/javascript-snakes (MIT) · Phá gạch — jakesgordon/javascript-breakout (MIT)
   var LIST = [
-    { id: 'xep-gach', title: 'Xếp gạch', color: [150, 110, 255], desc: 'Trò chơi · OK để bắt đầu · ◀ ▶ dịch khối, ▲ xoay, ▼ rơi nhanh' },
-    { id: '2048', title: '2048', color: [237, 194, 46], desc: 'Trò chơi · Gộp các ô cùng số bằng 4 phím mũi tên để đạt 2048' },
-    { id: 'ran-san-moi', title: 'Rắn săn mồi', color: [120, 220, 90], desc: 'Trò chơi · Mũi tên để rẽ, ăn mồi và đừng cắn vào đuôi' },
-    { id: 'pha-gach', title: 'Phá gạch', color: [90, 140, 255], desc: 'Trò chơi · ◀ ▶ di chuyển thanh đỡ, OK để phóng bóng' }
+    { id: 'xep-gach', title: T('Xếp gạch'), color: [150, 110, 255], desc: T('Trò chơi · OK để bắt đầu · ◀ ▶ dịch khối, ▲ xoay, ▼ rơi nhanh') },
+    { id: '2048', title: '2048', color: [237, 194, 46], desc: T('Trò chơi · Gộp các ô cùng số bằng 4 phím mũi tên để đạt 2048') },
+    { id: 'ran-san-moi', title: T('Rắn săn mồi'), color: [120, 220, 90], desc: T('Trò chơi · Mũi tên để rẽ, ăn mồi và đừng cắn vào đuôi') },
+    { id: 'pha-gach', title: T('Phá gạch'), color: [90, 140, 255], desc: T('Trò chơi · ◀ ▶ di chuyển thanh đỡ, OK để phóng bóng') }
   ];
 
   // Games whose page exists in app/games/<id>/ — the others show "đang hoàn thiện" instead of opening.

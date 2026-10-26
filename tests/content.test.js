@@ -2,6 +2,7 @@
 // Offline content: câu nói hay, ngày này năm xưa (wikitext parsing), tin RSS and the YouTube row helpers.
 const test = require('node:test');
 const assert = require('node:assert/strict');
+global.T = (s, ...a) => s.replace(/\{(\d)\}/g, (m, i) => a[i]);   // i18n.js on a TV set to Vietnamese
 
 const { Quotes } = require('../app/js/quotes.js');
 const { History } = require('../app/js/history.js');

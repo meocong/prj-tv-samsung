@@ -254,7 +254,7 @@
 
   /** {type: 'wifi'|'ethernet'|'none', ssid, ip} */
   function network(cb) {
-    if (!isTV) return cb({ type: 'wifi', ssid: 'Wi-Fi nhà', ip: '192.168.1.7' });
+    if (!isTV) return cb({ type: 'wifi', ssid: 'Wi-Fi', ip: '192.168.1.7' });
     try {
       tizen.systeminfo.getPropertyValue('NETWORK', function (n) {
         var type = String(n.networkType || '').toLowerCase();
@@ -282,9 +282,9 @@
     var d = {};
     try { d.model = w.productinfo.getRealModel() || w.productinfo.getModel(); } catch (e) { /* no webapis */ }
     try { d.firmware = w.productinfo.getFirmware(); } catch (e) { /* no webapis */ }
-    if (!isTV) { d.model = 'UA50TU8500KXXV (xem thử)'; }
+    if (!isTV) { d.model = 'UA50TU8500KXXV (preview)'; }
     network(function (n) {
-      d.network = n.type === 'wifi' ? 'Wi-Fi · ' + (n.ssid || '') : n.type === 'ethernet' ? 'Cáp mạng' : 'Chưa có mạng';
+      d.network = n.type === 'wifi' ? 'Wi-Fi · ' + (n.ssid || '') : n.type === 'ethernet' ? T('Cáp mạng') : T('Chưa có mạng');
       d.ip = n.ip || '';
       try {
         tizen.systeminfo.getPropertyValue('STORAGE', function (st) {

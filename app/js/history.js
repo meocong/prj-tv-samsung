@@ -6,6 +6,7 @@
  * của Wikipedia tiếng Anh (feed onthisday/selected) và dịch sang tiếng Việt (translate.googleapis.com, không
  * chính thức: lỗi thì giữ nguyên tiếng Anh). Mỗi ngày tải về được lưu mãi trên TV (IndexedDB, tối đa 366 trang
  * ngày ≈ 1,5 MB): mỗi ngày chỉ tải một lần trong đời, sau đó mở là hiện ngay, không cần mạng.
+ * Giao diện tiếng Anh: trang "October 22" của Wikipedia tiếng Anh, cùng cách đọc, lưu riêng (history.en.<ngày>).
  *
  *   History.load(date, function (items) { ... })   // items: [{year, text, kind: 'event'|'birth'|'death'}]
  */
@@ -14,9 +15,26 @@
 
   var OLD = 'nhaminh.history2.';   // the localStorage copies of earlier versions, moved over once
   var MIN_ITEMS = 10;
-  var PER_DAY = 40;   // what happened on 22/10 does not change: fetched once, kept for good
+  // What happened on 22/10 does not change: fetched once, kept for good. A day keeps this many of each kind,
+  // spread over the centuries (the English pages list hundreds of births).
+  var KEEP = { event: 25, birth: 10, death: 5 };
+  var EN = root.I18n && I18n.en;
+  var KEY = EN ? 'history.en.' : 'history.';
+  var MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
+    'November', 'December'];
 
-  function save(day, items) { Platform.kv.set('history.' + day, { at: Date.now(), items: items.slice(0, PER_DAY) }); }
+  /** At most KEEP[kind] items of each kind, evenly spread over the years, newest first. */
+  function trim(items) {
+    var out = [];
+    Object.keys(KEEP).forEach(function (kind) {
+      var list = items.filter(function (i) { return i.kind === kind; }).sort(function (a, b) { return b.year - a.year; });
+      var n = Math.min(list.length, KEEP[kind]);
+      for (var k = 0; k < n; k++) out.push(list[Math.floor(k * list.length / n)]);
+    });
+    return out.sort(function (a, b) { return b.year - a.year; });
+  }
+
+  function save(day, items) { Platform.kv.set(KEY + day, { at: Date.now(), items: trim(items) }); }
 
   /** Earlier versions kept a few days in localStorage: move them into the store and free the space. */
   var moved = false;
@@ -44,6 +62,7 @@
       .replace(/\[https?:[^\s\]]+\s([^\]]+)\]/g, '$1')
       .replace(/'{2,}/g, '')
       .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ').replace(/&ndash;/g, '–').replace(/&mdash;/g, '—').replace(/&amp;/g, '&')
       .replace(/\s+/g, ' ')
       .trim();
   }
@@ -59,11 +78,14 @@
     return m ? m[1] : '';
   }
 
-  function parse(text) {
+  /** A day page's wikitext → items; lang 'en' reads the English page's Events / Births / Deaths. */
+  function parse(text, lang) {
     var out = [];
-    [['Sự kiện', 'event'], ['Sinh', 'birth'], ['Mất', 'death']].forEach(function (s) {
+    var names = lang === 'en' ? [['Events', 'event'], ['Births', 'birth'], ['Deaths', 'death']] :
+      [['Sự kiện', 'event'], ['Sinh', 'birth'], ['Mất', 'death']];
+    names.forEach(function (s) {
       section(text, s[0]).split('\n').forEach(function (line) {
-        var m = /^\*+\s*\[\[(\d{1,4})\]\]\s*[–—-]\s*(.+)$/.exec(line.trim());
+        var m = /^\*+\s*\[\[(\d{1,4})\]\]\s*(?:[–—-]|&ndash;|&mdash;)\s*(.+)$/.exec(line.trim());
         if (!m) return;
         var t = clean(m[2]);
         if (t.length >= 12 && !GRIM.test(t)) out.push({ year: Number(m[1]), text: short(t), kind: s[1] });
@@ -102,8 +124,8 @@
     var day = (date.getMonth() + 1) + '-' + date.getDate();
     var old = (function () { try { return JSON.parse(localStorage.getItem(OLD + day)); } catch (e) { return null; } })();
     moveOld();
-    if (old && old.items && old.items.length) return cb(old.items);   // just moved: same answer, no wait
-    Platform.kv.get('history.' + day, function (cached) {
+    if (!EN && old && old.items && old.items.length) return cb(old.items);   // just moved: same answer, no wait
+    Platform.kv.get(KEY + day, function (cached) {
       if (cached && cached.items && cached.items.length) return cb(cached.items);
       fetchDay(date, function (items) {
         if (items.length) save(day, items);
@@ -113,15 +135,13 @@
   }
 
   function fetchDay(date, cb) {
-    var page = date.getDate() + '_tháng_' + (date.getMonth() + 1);
-    var url = 'https://vi.wikipedia.org/w/api.php?action=parse&prop=wikitext&format=json&formatversion=2&origin=*&page=' +
+    var page = EN ? MONTHS_EN[date.getMonth()] + '_' + date.getDate() : date.getDate() + '_tháng_' + (date.getMonth() + 1);
+    var url = 'https://' + (EN ? 'en' : 'vi') + '.wikipedia.org/w/api.php?action=parse&prop=wikitext&format=json&formatversion=2&origin=*&page=' +
       encodeURIComponent(page);
     Platform.getJSON(url, function (err, data) {
-      var items = !err && data && data.parse ? parse(data.parse.wikitext || '') : [];
-      function done(all) {
-        all.sort(function (a, b) { return b.year - a.year; });
-        cb(all);
-      }
+      var items = !err && data && data.parse ? parse(data.parse.wikitext || '', EN ? 'en' : 'vi') : [];
+      function done(all) { cb(trim(all)); }
+      if (EN) return done(items);
       if (items.filter(function (i) { return i.kind === 'event'; }).length >= MIN_ITEMS) return done(items);
       fromEnglish(date, function (en) {
         // Skip English events whose year the Vietnamese page already covers.

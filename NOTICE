@@ -11,6 +11,9 @@ It includes or derives from:
   — app/games/{xep-gach,ran-san-moi,pha-gach}/LICENSE
 - QR Code Generator for JavaScript — MIT, Copyright (c) 2009 Kazuhiko Arase — app/js/vendor/qrcode.js
 - Lexend font — SIL Open Font License 1.1 — app/fonts/OFL-Lexend.txt
+- Noto Sans (IPA subset, app/fonts/NotoSans-IPA.ttf) — SIL Open Font License 1.1, Copyright 2022 The Noto Project Authors
+  — app/fonts/OFL-NotoSans.txt
 - Lunar calendar algorithm after Hồ Ngọc Đức (https://www.informatik.uni-leipzig.de/~duc/amlich/)
-- Data: Bing Image of the Day, Wikimedia Commons featured pictures, Open-Meteo (weather, air quality).
+- Data: Bing Image of the Day, Wikimedia Commons featured pictures, Open-Meteo (weather, air quality). Word of the Day:
+  Datamuse API, Free Dictionary API (Wiktionary data, CC BY-SA), Google Translate (meanings, translations, speech).
 - App icons in app/icons/ are the apps' own store artwork, shown only to launch those apps on this TV.

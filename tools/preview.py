@@ -16,9 +16,10 @@ LOCAL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "local")
 USE_LOCAL = "--public" not in sys.argv
 ALLOWED = ("www.bing.com", "en.wikipedia.org", "vi.wikipedia.org", "api.open-meteo.com", "air-quality-api.open-meteo.com",
            "api.wikimedia.org", "translate.googleapis.com", "www.youtube.com", "www.googleapis.com",
-           "vnexpress.net", "thanhnien.vn", "dantri.com.vn", "tuoitre.vn",
+           "vnexpress.net", "e.vnexpress.net", "thanhnien.vn", "dantri.com.vn", "tuoitre.vn", "feeds.bbci.co.uk",
            "zenquotes.io", "vi.wikiquote.org",
-           "edge-api.pnj.io", "portal.vietcombank.com.vn", "open.er-api.com", "api.github.com")
+           "edge-api.pnj.io", "portal.vietcombank.com.vn", "open.er-api.com", "api.github.com",
+           "api.datamuse.com", "api.dictionaryapi.dev")
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):

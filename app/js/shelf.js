@@ -13,7 +13,7 @@
 
   var C = root.CONFIG;
   var TTL = 60 * 60000;
-  var TITLE = 'Mới trên các kênh Việt';
+  var TITLE = T('Mới trên các kênh Việt');
 
   function cacheGet(key) {
     var c = Platform.store.get('shelf.' + key, null);

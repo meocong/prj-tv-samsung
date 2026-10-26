@@ -86,7 +86,10 @@ Trên điện thoại hoặc laptop **cùng Wi-Fi**: quét mã QR (hoặc gõ đ
   mờ. Ảnh hiện trên màn hình chờ và trong hình nền.
 - **Ảnh avatar** ở góc phải màn hình.
 
-TV nhận và tự cập nhật sau vài giây. Mọi thứ lưu trên TV.
+TV nhận và tự cập nhật sau vài giây. Mọi thứ lưu trên TV. Trang này có cả tiếng Anh (nút *English* ở góc trên).
+
+Giao diện trên TV theo ngôn ngữ menu của TV: tiếng Việt, hoặc tiếng Anh cho mọi ngôn ngữ khác. Đổi ở **Cài đặt →
+Ngôn ngữ / Language**.
 
 ## 7. Cài đặt TV
 

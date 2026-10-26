@@ -10,6 +10,13 @@
   font-weight: 100 900;
 }
 
+/* Lexend has no IPA symbols (ɪ ʊ ʃ…): phonetics fall back to a small subset of Noto Sans, loaded only when needed. */
+@font-face {
+  font-family: 'IPA';
+  src: url('../fonts/NotoSans-IPA.ttf') format('truetype');
+  unicode-range: U+0250-02FF, U+0300-036F, U+0370-03FF, U+1D00-1DBF;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
@@ -18,7 +25,7 @@ html, body {
   overflow: hidden;
   background: #000;
   color: #fff;
-  font-family: 'Lexend', sans-serif;
+  font-family: 'Lexend', 'IPA', sans-serif;
   cursor: default;
   -webkit-font-smoothing: antialiased;
 }
@@ -132,6 +139,7 @@ body.scrolled #today { opacity: 0 !important; transform: translateY(-40px); }
 }
 .tdMeta { margin-top: 6px; font-size: 18px; color: rgba(255, 255, 255, 0.5); }
 #frQuote { margin-top: 18px; max-width: 1100px; font-size: 24px; font-weight: 300; font-style: italic; color: rgba(255, 255, 255, 0.75); }
+#frWord { margin-top: 10px; max-width: 1100px; font-size: 21px; font-weight: 300; color: rgba(255, 255, 255, 0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ---- top shelf ------------------------------------------------------------------------------ */
 
@@ -187,6 +195,43 @@ body.scrolled #shelfRow { opacity: 0; transition: none; }   /* gone at once: the
 #nvStory h2 { margin-top: 26px; font-size: 34px; font-weight: 400; line-height: 1.3; }
 #nvStory p { margin-top: 16px; font-size: 23px; font-weight: 300; line-height: 1.55; color: rgba(255, 255, 255, 0.78); max-height: 216px; overflow: hidden; }
 #nvStory small { display: block; margin-top: 18px; font-size: 18px; color: rgba(255, 255, 255, 0.45); }
+
+/* ---- Học tiếng Anh ------------------------------------------------------------------------------ */
+
+#wordsView { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; z-index: 7; animation: fadeIn 220ms ease;
+  background: #0a0a0e linear-gradient(135deg, rgba(46, 196, 182, 0.16), rgba(58, 111, 247, 0.12) 60%, rgba(10, 10, 14, 0)); }
+.wvHead { position: absolute; left: 96px; top: 52px; font-size: 48px; font-weight: 300; }
+#wvBody { position: absolute; left: 96px; top: 150px; width: 1728px; height: 820px; display: flex; }
+.wvWait { font-size: 26px; color: rgba(255, 255, 255, 0.55); }
+.wvLeft { flex: none; width: 720px; }
+.wvWhen { font-size: 17px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: #7fe3d6; }
+.wvWord { display: inline-block; margin: 18px 0 0 -22px; padding: 0 22px 10px; border-radius: 30px; font-size: 120px;
+  font-weight: 300; letter-spacing: -0.02em; line-height: 1.15; transition: background 160ms ease, color 160ms ease; }
+.wvIpa { margin-top: 6px; font-size: 36px; font-weight: 300; color: rgba(255, 255, 255, 0.72); }
+.wvIpa svg { width: 34px; height: 34px; margin-left: 18px; vertical-align: -5px; fill: currentColor; stroke: currentColor; stroke-width: 1.6;
+  stroke-linecap: round; stroke-linejoin: round; }
+.wvMeaning { margin-top: 30px; font-size: 46px; font-weight: 400; line-height: 1.25; color: #ffd479; }
+.wvSenses { margin-top: 22px; font-size: 22px; font-weight: 300; line-height: 1.5; color: rgba(255, 255, 255, 0.8); }
+.wvSenses div, .wvSyn { display: flex; margin-top: 4px; }
+.wvSenses b, .wvSyn b { flex: none; width: 190px; margin-right: 12px; font-weight: 500; color: rgba(255, 255, 255, 0.5); }
+.wvSyn { margin-top: 22px; font-size: 22px; font-weight: 300; line-height: 1.5; color: rgba(255, 255, 255, 0.8); }
+/* The padding leaves room for the highlight, which reaches 18px left of the text. */
+.wvRight { flex: none; width: 946px; height: 820px; margin-left: 62px; padding-left: 18px; overflow: hidden;
+  -webkit-mask-image: linear-gradient(#000 90%, transparent); }   /* a soft edge says there is more below */
+.wvScroll { position: relative; transition: transform 260ms cubic-bezier(0.25, 0.8, 0.3, 1); }
+.wvRight h3 { margin: 30px 0 6px; font-size: 17px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: #7fd1ff; }
+.wvRight h3:first-child { margin-top: 0; }
+.wvDef { margin-top: 14px; font-size: 25px; font-weight: 300; line-height: 1.45; }
+.wvDef i { display: inline-block; margin-right: 12px; padding: 1px 12px; border-radius: 10px; font-size: 17px; font-style: normal;
+  font-weight: 500; vertical-align: 3px; background: rgba(255, 255, 255, 0.12); color: rgba(255, 255, 255, 0.75); }
+.wvRight small { display: block; margin-top: 4px; font-size: 21px; font-weight: 300; color: rgba(255, 255, 255, 0.55); }
+.wvEx { margin: 10px 0 0 -18px; padding: 10px 18px 12px; border-radius: 20px; font-size: 24px; font-style: italic; color: rgba(255, 255, 255, 0.9);
+  transition: background 160ms ease, color 160ms ease; }
+.wvEx small { font-style: normal; }
+.wvSentence { font-style: normal; }
+.wvLine.focused { background: rgba(255, 255, 255, 0.95); color: #000; }
+.wvLine.focused small { color: rgba(0, 0, 0, 0.55); }
+#wvHint { position: absolute; left: 96px; bottom: 44px; font-size: 20px; color: rgba(255, 255, 255, 0.5); }
 
 /* ---- header ---------------------------------------------------------------------------------- */
 

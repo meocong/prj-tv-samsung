@@ -1,14 +1,22 @@
 /*
  * Ngày lễ, Tết, Rằm, Mùng 1 và sinh nhật sắp tới — cho dải sự kiện ở màn hình chính.
  * Chạy được trên TV (window.Events, cần window.Lunar) và trong Node để test.
+ * Tên gốc (title) luôn là tiếng Việt; Events.label(e) là tên để hiện, theo ngôn ngữ của màn hình (i18n.js).
  */
 (function (root, factory) {
   var lunar = typeof module === 'object' && module.exports ? require('./lunar.js') : root.Lunar;
-  var mod = factory(lunar);
+  var mod = factory(lunar, root);
   if (typeof module === 'object' && module.exports) module.exports = mod;
   else root.Events = mod;
-})(this, function (Lunar) {
+})(this, function (Lunar, root) {
   'use strict';
+
+  /** The screen's translator (i18n.js), or the Vietnamese with {0}… filled in (Node, tests). */
+  function T(text) {
+    if (root && root.T) return root.T.apply(null, arguments);
+    var args = arguments;
+    return text.replace(/\{(\d)\}/g, function (m, i) { return args[+i + 1]; });
+  }
 
   // [ngày, tháng, tên, mức ưu tiên] — ưu tiên cao hơn thắng khi hai sự kiện trùng ngày.
   var SOLAR = [
@@ -80,7 +88,7 @@
     var lt = Lunar.fromSolar(d, m, y);
     var byJd = {};
 
-    function add(title, jd, kind, priority) {
+    function add(title, jd, kind, priority, extra) {
       var days = jd - today;
       if (days < 0 || days > horizon) return;
       var prev = byJd[jd];
@@ -90,6 +98,7 @@
         title: title, days: days, jd: jd, kind: kind, priority: priority,
         solar: solar, lunar: Lunar.fromSolar(solar[0], solar[1], solar[2])
       };
+      if (extra) Object.keys(extra).forEach(function (k) { byJd[jd][k] = extra[k]; });
     }
 
     [y, y + 1].forEach(function (yy) {
@@ -113,9 +122,9 @@
     var len = Lunar.monthLength(lt);
     var monthStart = today - lt.day + 1;
     var nextFirst = lt.day === 1 ? today : monthStart + len;
-    add('Mùng 1 tháng ' + monthLabel(nextFirst), nextFirst, 'moon', 0);
+    add('Mùng 1 tháng ' + monthLabel(nextFirst), nextFirst, 'moon', 0, { moon: 1 });
     var fullMoon = lt.day <= 15 ? monthStart + 14 : monthStart + len + 14;
-    add('Rằm tháng ' + monthLabel(fullMoon), fullMoon, 'moon', 0);
+    add('Rằm tháng ' + monthLabel(fullMoon), fullMoon, 'moon', 0, { moon: 15 });
 
     (opts.birthdays || []).forEach(function (b) {
       if (!b || !b.day || !b.month) return;
@@ -123,10 +132,10 @@
       if (b.lunar) {
         [lt.year, lt.year + 1].forEach(function (ly) {
           var s = Lunar.toSolar(b.day, b.month, ly, false);
-          if (s) add(title, jdOf(s), 'birthday', 5);
+          if (s) add(title, jdOf(s), 'birthday', 5, { person: b.name });
         });
       } else {
-        [y, y + 1].forEach(function (yy) { add(title, Lunar.jdFromDate(b.day, b.month, yy), 'birthday', 5); });
+        [y, y + 1].forEach(function (yy) { add(title, Lunar.jdFromDate(b.day, b.month, yy), 'birthday', 5, { person: b.name }); });
       }
     });
 
@@ -140,10 +149,22 @@
     return Lunar.MONTH_NAMES[l.month - 1] + (l.leap ? ' nhuận' : '');
   }
 
-  function countdown(days) {
-    if (days === 0) return 'Hôm nay';
-    if (days === 1) return 'Ngày mai';
-    return 'Còn ' + days + ' ngày';
+  /** "Hôm nay", "Ngày mai", "Còn 5 ngày" (lower: "còn 5 ngày"). */
+  function countdown(days, lower) {
+    if (days === 0) return T('Hôm nay');
+    if (days === 1) return T('Ngày mai');
+    return lower ? T('còn {0} ngày', days) : T('Còn {0} ngày', days);
+  }
+
+  /** The name to show: the Vietnamese title, or its English name ("Full moon, lunar month 9", "Bà's birthday"). */
+  function label(e) {
+    if (e.kind === 'birthday') return T('Sinh nhật {0}', e.person);
+    if (e.kind === 'moon') {
+      if (!(root && root.I18n && root.I18n.en)) return e.title;   // "Rằm tháng Chín" as it is
+      var m = e.lunar.month + (e.lunar.leap ? ' (leap)' : '');
+      return e.moon === 15 ? T('Rằm tháng {0}', m) : T('Mùng 1 tháng {0}', m);
+    }
+    return T(e.title);
   }
 
   /**
@@ -159,5 +180,9 @@
     return out.sort(function (a, b) { return a.jd - b.jd; });
   }
 
-  return { upcoming: upcoming, countdown: countdown, nthWeekday: nthWeekday, pick: pick };
+  // Every holiday name, for tests/i18n.test.js (each needs an English name).
+  var NAMES = SOLAR.map(function (e) { return e[2]; }).concat(NTH_WEEKDAY.map(function (e) { return e[3]; }),
+    LUNAR.map(function (e) { return e[2]; }), ['Giao thừa']);
+
+  return { upcoming: upcoming, countdown: countdown, label: label, nthWeekday: nthWeekday, pick: pick, NAMES: NAMES };
 });

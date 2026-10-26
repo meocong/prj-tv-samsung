@@ -1,14 +1,15 @@
 # Nhà Mình: màn hình chính kiểu Apple TV cho TV Samsung (Tizen)
 
 Một app thay chỗ màn hình Home cho TV Samsung chạy Tizen. Giao diện kiểu Apple TV, hình nền đẹp đổi theo giờ, thời
-tiết và chất lượng không khí, lịch vạn niên, tin tức, giá vàng và tỷ giá, hàng video YouTube, game chơi bằng remote.
-Thoát app nào cũng quay về đây. Cài bằng Developer Mode của TV, không cần root; tên nhà, thành phố, ảnh gia đình đặt
-bằng điện thoại.
+tiết và chất lượng không khí, lịch vạn niên, tin tức, giá vàng và tỷ giá, hàng video YouTube, mỗi ngày một từ tiếng Anh
+(nghe đọc, nghĩa, câu ví dụ), game chơi bằng remote. Thoát app nào cũng quay về đây. Giao diện tiếng Việt hoặc tiếng Anh.
+Cài bằng Developer Mode của TV, không cần root; tên nhà, thành phố, ảnh gia đình đặt bằng điện thoại.
 
-*An Apple TV–style home screen for Samsung Tizen TVs: rotating photo wallpapers, weather and air quality, a Vietnamese
-lunar almanac, news, gold prices and exchange rates, a YouTube row, remote-friendly games, phone-based setup, and a
-background service that brings you back home when you leave an app. Installs with
-[Apps2Samsung](https://github.com/Apps2Samsung/Apps2Samsung) on Windows, macOS, Linux or Android. UI text is Vietnamese.*
+*An Apple TV–style home screen for Samsung Tizen TVs: rotating photo wallpapers, weather and air quality, a lunar
+calendar, news, an English word a day, a YouTube row, remote-friendly games, phone-based setup, and a background service
+that brings you back home when you leave an app. Vietnamese or English UI, following the TV's language. Installs with
+[Apps2Samsung](https://github.com/Apps2Samsung/Apps2Samsung) on Windows, macOS, Linux or Android.*
+**[Read this in English →](README.en.md)**
 
 ![Màn hình chính](docs/screenshots/home.jpg)
 
@@ -19,6 +20,7 @@ background service that brings you back home when you leave an app. Installs wit
 | ![Giá vàng](docs/screenshots/gold.jpg) **Hôm nay**: giá vàng, tỷ giá, câu nói hay, ngày này năm xưa, tin mới | ![Tin mới](docs/screenshots/news.jpg) **Tin mới** từ VnExpress, Thanh Niên, Dân Trí |
 | ![Cài đặt bằng điện thoại](docs/screenshots/setup-tv.jpg) **Cài đặt bằng điện thoại / máy tính**: quét QR, nhập PIN | ![Thư viện hình nền](docs/screenshots/gallery.jpg) **Thư viện hình nền** |
 | ![Cài đặt](docs/screenshots/settings.jpg) **Cài đặt** nhiều tầng | ![Màn hình chờ](docs/screenshots/screensaver.jpg) **Màn hình chờ** |
+| ![Học tiếng Anh](docs/screenshots/words.jpg) **Học tiếng Anh**: mỗi ngày một từ, OK để nghe đọc | ![Giao diện tiếng Anh](docs/screenshots/home-en.jpg) **Giao diện tiếng Anh** |
 
 *Ảnh chụp từ bản xem thử với cấu hình mẫu. Ảnh nền là ảnh Bing trong ngày.*
 
@@ -34,6 +36,15 @@ background service that brings you back home when you leave an app. Installs wit
   - *tin mới*;
   - *câu nói hay*: mỗi lượt một câu, gồm 50 danh ngôn mới mỗi ngày (ZenQuotes, dịch sang tiếng Việt), ~130 câu chọn sẵn
     và tục ngữ (Wikiquote).
+- **Học tiếng Anh**: mỗi ngày một từ mới theo chủ đề, có phiên âm IPA, nghĩa tiếng Việt theo từ loại, giải nghĩa tiếng
+  Anh có dịch, câu ví dụ có dịch, từ đồng nghĩa. OK để nghe đọc (bấm lần nữa: đọc chậm), ▲ ▼ chọn câu ví dụ để nghe,
+  ◀ ▶ xem lại các từ đã học hoặc học thêm từ mới. Ba trình độ (Cơ bản, Trung cấp, Nâng cao). Từ của ngày còn hiện trong
+  khối Hôm nay và trên màn hình chờ. Không có danh sách từ đóng gói sẵn: từ lấy từ nguồn công khai (Datamuse) theo
+  chủ đề, chủ đề mới sinh ra từ chính các từ đã học, nên học mãi không hết.
+- **Hai thứ tiếng**: giao diện theo ngôn ngữ menu của TV (tiếng Việt, còn lại là tiếng Anh), đổi được ở *Cài đặt →
+  Ngôn ngữ / Language*. Giao diện tiếng Anh dùng nội dung tiếng Anh: tin VnExpress International và BBC, "On this day"
+  của Wikipedia tiếng Anh, danh ngôn nguyên bản và bản tiếng Anh của tục ngữ, ca dao; tên ngày lễ, tiết khí, ngày âm
+  bằng tiếng Anh. Trang cài đặt trên điện thoại cũng có hai thứ tiếng.
 - **Thời tiết và AQI** (Open-Meteo): nhiệt độ, dự báo 4 ngày, chất lượng không khí kèm lời khuyên, "có thể mưa sau ~N phút".
 - **Sắp tới**: Rằm, Mùng 1, ngày lễ dương và âm lịch, sinh nhật người nhà, đếm ngược Tết.
 - **Lịch vạn niên**: lưới tháng âm dương. OK trên một ngày mở *Xem ngày*: can chi, Trực, 28 sao, nạp âm, giờ hoàng đạo,
@@ -86,7 +97,8 @@ Mọi thứ lưu trên TV.
 ![Trang cài đặt trên điện thoại](docs/screenshots/setup-phone.jpg)
 
 Các mục khác chỉnh ngay trên TV trong **Cài đặt** (nút bánh răng hoặc phím xanh dương): màn hình chờ, hình nền, số ô mỗi
-hàng, ẩn/hiện app, khu vực thời tiết, giá vàng và tỷ giá, đóng app chạy ngầm.
+hàng, ẩn/hiện app, khu vực thời tiết, giá vàng và tỷ giá, đóng app chạy ngầm, Học tiếng Anh (bật/tắt, trình độ) và
+*Ngôn ngữ / Language* (theo TV, tiếng Việt, English).
 
 **Khi tự build từ mã nguồn**: giá trị mặc định nằm trong [app/config.js](app/config.js) (dock, app ẩn, kênh YouTube, tên
 cổng HDMI, mặc định của Cài đặt). Cấu hình riêng của một nhà có thể để trong thư mục `local/` (không lên Git, đã có trong
@@ -112,7 +124,8 @@ python3 tools/tvdev.py check                  # chặn cú pháp JS/CSS mà Chro
 python3 tools/tvdev.py release                # đóng gói bản công khai vào dist/
 python3 tools/preview.py                      # xem thử trên Chrome: http://localhost:8765 (ghép local/)
 python3 tools/preview.py 8765 --public        # đúng như người khác thấy khi clone repo
-node --test tests/*.test.js                   # test: lịch vạn niên, ngày lễ, câu nói, giá vàng, danh sách app, dịch vụ nền…
+node --test tests/*.test.js                   # test: lịch vạn niên, ngày lễ, câu nói, giá vàng, danh sách app, dịch vụ nền,
+                                              # bản dịch tiếng Anh, chọn từ tiếng Anh…
 ```
 
 - **Debug trên TV**: `python3 tools/tvdev.py debug --tv <IP TV>`, rồi
@@ -123,7 +136,10 @@ node --test tests/*.test.js                   # test: lịch vạn niên, ngày 
 - **Điều khiển TV từ máy**: `tools/.venv/bin/python tools/tv.py key KEY_HOME`.
 - **Danh mục app và icon** ([app/js/apps.js](app/js/apps.js), [app/icons/](app/icons/)): `tools/sync_apps.py` đọc app
   trên một TV và lấy icon đẹp; app không có trong danh mục vẫn hiện, với tên và icon của chính TV.
-- **Phát hành**: đẩy một tag dạng `v1.2.0`; workflow [release.yml](.github/workflows/release.yml) chạy test, đóng gói và
+- **Thêm chữ trên màn hình**: viết câu tiếng Việt trong `T('…')` (số, tên: `T('Còn {0} ngày', n)`), thêm bản tiếng Anh vào
+  [app/js/i18n-en.js](app/js/i18n-en.js). Chữ cố định trong `index.html` thì gắn thuộc tính `data-t`.
+  `tests/i18n.test.js` báo câu nào chưa có bản tiếng Anh.
+- **Phát hành**: đẩy một tag dạng `v1.3.0`; workflow [release.yml](.github/workflows/release.yml) chạy test, đóng gói và
   gắn `NhaMinh-<phiên bản>.wgt` vào GitHub Release. Phiên bản lấy từ `app/config.xml`.
 
 ## Cách hoạt động
@@ -140,6 +156,16 @@ node --test tests/*.test.js                   # test: lịch vạn niên, ngày 
   [app/service/setup.html](app/service/setup.html). Những gì điện thoại gửi lên (bắt buộc kèm mã PIN) chờ trong dịch vụ,
   tới khi màn hình chính lấy về và lưu ([app/js/profile.js](app/js/profile.js)).
 - **Mở thẳng video YouTube**: app-control `PAYLOAD` dạng `v=<mã video>&t=0`, giống điện thoại cast lên TV.
+- **Hai thứ tiếng** ([app/js/i18n.js](app/js/i18n.js)): chữ trong code viết bằng tiếng Việt, bọc trong `T()`; giao diện
+  tiếng Anh tra bảng [i18n-en.js](app/js/i18n-en.js). Ngôn ngữ chọn một lần lúc mở app (`auto` theo `navigator.language`
+  của TV), đổi ngôn ngữ thì app tải lại. Mỗi nguồn nội dung có bản theo ngôn ngữ và kho riêng.
+- **Học tiếng Anh** ([app/js/words.js](app/js/words.js)):
+  - chọn từ: chủ đề kế tiếp trong hàng chờ → Datamuse trả các từ liên quan kèm độ phổ biến → giữ từ đơn, đúng trình độ,
+    chưa học, không phải dạng biến đổi của từ đã học → từ học xong thành chủ đề về sau;
+  - nội dung: Google Dịch (nghĩa tiếng Việt, định nghĩa, câu ví dụ, từ đồng nghĩa, dịch các câu), phiên âm IPA của
+    dictionaryapi.dev (Wiktionary), Datamuse dự phòng; câu không hợp màn hình gia đình bị lọc;
+  - phát âm: giọng đọc của Google Dịch phát bằng `<audio>`; phông Lexend thiếu ký hiệu IPA nên phiên âm dùng một phần nhỏ
+    của Noto Sans (`app/fonts/NotoSans-IPA.ttf`, chỉ tải khi cần).
 - **Mượt trên TV yếu**:
   - hình nền vẽ sẵn vào canvas, chỉ 1–2 lớp toàn màn hình;
   - các khối mờ dần có lớp riêng;
@@ -162,6 +188,9 @@ Mở app là hiện ngay từ kho, chỉ tải mạng khi đã tới hạn. Kho 
 | Giá vàng, tỷ giá | bản gần nhất | 30 phút |
 | Ngày này năm xưa (IndexedDB) | mãi mãi, tối đa 366 trang ngày ≈ 1,5 MB | mỗi ngày chỉ tải một lần; tải sẵn 7 ngày tới |
 | Thời tiết | mỗi nơi đã chọn một bản | khi bản đang có cũ hơn 20 phút |
+| Học tiếng Anh (IndexedDB) | mọi từ đã học, mãi mãi (≈ 2 KB một từ), lịch sử từng ngày, hàng chờ chủ đề | mỗi ngày một từ; thêm từ khi bấm ▶ ở từ mới nhất |
+
+Tin mới, ngày này năm xưa và câu nói hay có kho riêng cho từng ngôn ngữ.
 
 ## Hạn chế
 
@@ -196,7 +225,8 @@ Lấy cảm hứng từ [cleanyourtv](https://github.com/Gathin23/cleanyourtv) (
 [webos-vibehack](https://github.com/OmkarK97/webos-vibehack). Cài đặt nhờ [Apps2Samsung](https://github.com/Apps2Samsung/Apps2Samsung).
 Game, font, thư viện QR và mã của bên thứ ba cùng giấy phép của chúng: xem [NOTICE](NOTICE).
 
-Dữ liệu: Bing Image of the Day, [Open-Meteo](https://open-meteo.com) (CC BY 4.0), Wikipedia và Wikiquote tiếng Việt
-(CC BY-SA), [ZenQuotes](https://zenquotes.io), PNJ (giá vàng), Vietcombank (tỷ giá), RSS của VnExpress, Thanh Niên, Dân
-Trí và các kênh YouTube. Thuật toán âm lịch theo Hồ Ngọc Đức. Logo app trong `app/icons/` thuộc về chủ sở hữu của từng
-app.
+Dữ liệu: Bing Image of the Day, [Open-Meteo](https://open-meteo.com) (CC BY 4.0), Wikipedia tiếng Việt, tiếng Anh và
+Wikiquote tiếng Việt (CC BY-SA), [ZenQuotes](https://zenquotes.io), PNJ (giá vàng), Vietcombank (tỷ giá), RSS của
+VnExpress, VnExpress International, Thanh Niên, Dân Trí, BBC và các kênh YouTube. Học tiếng Anh: [Datamuse](https://www.datamuse.com/api/),
+[Free Dictionary API](https://dictionaryapi.dev) (dữ liệu Wiktionary, CC BY-SA), Google Dịch (nghĩa, bản dịch, giọng
+đọc). Thuật toán âm lịch theo Hồ Ngọc Đức. Logo app trong `app/icons/` thuộc về chủ sở hữu của từng app.

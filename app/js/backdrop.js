@@ -12,10 +12,13 @@
   var POOL_KEY = 'photos.pool';
   var REFRESH_MS = 6 * 3600 * 1000;
   var ARCHIVE_MAX = 120;
-  // Vietnam first (its captions win when markets share a photo); the others add their own photos of the day.
-  var MARKETS = [['vi-VN', ''], ['en-US', 'Mỹ'], ['ja-JP', 'Nhật Bản'], ['en-GB', 'Anh'], ['de-DE', 'Đức'], ['fr-FR', 'Pháp'],
-    ['zh-CN', 'Trung Quốc'], ['en-IN', 'Ấn Độ'], ['pt-BR', 'Brazil'], ['en-CA', 'Canada'], ['en-AU', 'Úc'],
-    ['es-ES', 'Tây Ban Nha'], ['it-IT', 'Ý']];
+  // Vietnam first (its captions win when markets share a photo); the others add their own photos of the day. A photo
+  // also keeps the caption of the first English market that has it (titleEn), for the English screen.
+  var MARKETS = [['vi-VN', '', ''], ['en-US', 'Mỹ', 'US'], ['ja-JP', 'Nhật Bản', 'Japan'], ['en-GB', 'Anh', 'UK'],
+    ['de-DE', 'Đức', 'Germany'], ['fr-FR', 'Pháp', 'France'], ['zh-CN', 'Trung Quốc', 'China'], ['en-IN', 'Ấn Độ', 'India'],
+    ['pt-BR', 'Brazil', 'Brazil'], ['en-CA', 'Canada', 'Canada'], ['en-AU', 'Úc', 'Australia'],
+    ['es-ES', 'Tây Ban Nha', 'Spain'], ['it-IT', 'Ý', 'Italy']];
+  var VIETNAMESE = /[ăâđêôơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/i;
   var CJK = /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/;   // Lexend has no glyphs for these
 
   /** The photo behind a Bing URL ("OHR.NaejangsanNP_ROW…" and "OHR.NaejangsanNP_EN-US…" are the same). */
@@ -38,11 +41,12 @@
           if (!err && data && data.images) {
             data.images.forEach(function (im) {
               var m = /^(.*?)\s*\((©[^)]*)\)\s*$/.exec(im.copyright || '');
-              var sd = String(im.startdate || ''), title = m ? m[1] : (im.title || '');
-              if (CJK.test(title)) title = 'Ảnh Bing ' + mk[1];
+              var sd = String(im.startdate || ''), title = m ? m[1] : (im.title || ''), titleEn = mk[0].indexOf('en-') === 0 ? title : '';
+              if (CJK.test(title)) { title = 'Ảnh Bing ' + mk[1]; titleEn = 'Bing photo, ' + mk[2]; }
               out.push({
                 url: 'https://www.bing.com' + im.urlbase + '_1920x1080.jpg',
                 title: title,
+                titleEn: titleEn,
                 credit: m && !CJK.test(m[2]) ? m[2] : '',
                 date: sd.slice(0, 4) + '-' + sd.slice(4, 6) + '-' + sd.slice(6, 8),
                 source: 'Bing',
@@ -117,8 +121,8 @@
     var seen = {}, out = [];
     fresh.concat(old || []).forEach(function (p) {
       var k = photoKey(p);
-      if (seen[k]) return;
-      seen[k] = true;
+      if (seen[k]) { if (p.titleEn && !seen[k].titleEn) seen[k].titleEn = p.titleEn; return; }
+      seen[k] = p;
       if (p.title && CJK.test(p.title)) p.title = '';   // left over from before captions were cleaned
       out.push(p);
     });
@@ -296,5 +300,15 @@
   /** The cached pool (refreshed when stale): today's photo first, then the others shuffled. */
   function pool(choice, cb) { loadPool(choice, false, cb); }
 
-  root.Backdrop = { create: create, palette: palette, isoDate: isoDate, today: today, pool: pool, merge: merge, photoKey: photoKey };
+  /**
+   * A photo's caption in the screen's language. English: the English market's caption; a photo only Vietnam's
+   * market showed goes without one rather than in Vietnamese. Family photos carry the family's name as it is.
+   */
+  function caption(p) {
+    if (!(root.I18n && I18n.en) || p.date === '0000-00-00') return p.title || '';
+    return p.titleEn || (VIETNAMESE.test(p.title || '') ? '' : p.title || '');
+  }
+
+  root.Backdrop = { create: create, palette: palette, isoDate: isoDate, today: today, pool: pool, merge: merge, photoKey: photoKey,
+    caption: caption };
 })(this);

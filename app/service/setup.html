@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cài đặt màn hình chính TV</title>
+<title data-t>Cài đặt màn hình chính TV</title>
 <style>
   :root { --bg: #0d0f14; --card: #171a22; --line: #262b36; --text: #f2f3f5; --dim: #9aa1ad; --accent: #ff8a3d; --bad: #ff6b6b; }
   * { box-sizing: border-box; }
@@ -31,57 +31,59 @@
   .err { color: var(--bad); }
   .ok { color: #7bd88f; }
   #pin { font-size: 28px; letter-spacing: 8px; text-align: center; }
+  .lang { float: right; margin-top: 12px; color: var(--accent); text-decoration: none; font-size: 15px; }
 </style>
 </head>
 <body>
 <main>
-  <h1>Màn hình chính TV</h1>
-  <p id="who">Cài đặt tên nhà, thành phố, ảnh gia đình và sinh nhật cho TV.</p>
+  <a href="#" class="lang" id="lang"></a>
+  <h1 data-t>Màn hình chính TV</h1>
+  <p id="who" data-t>Cài đặt tên nhà, thành phố, ảnh gia đình và sinh nhật cho TV.</p>
 
   <section id="pinBox">
-    <h2>Mã PIN</h2>
-    <p>Mã 6 số hiện trên TV: <b>Cài đặt → Cài đặt bằng điện thoại / máy tính</b>.</p>
+    <h2 data-t>Mã PIN</h2>
+    <p data-t>Mã 6 số hiện trên TV: <b>Cài đặt → Cài đặt bằng điện thoại / máy tính</b>.</p>
     <input id="pin" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
-    <div class="row"><button class="primary" id="go">Tiếp tục</button></div>
+    <div class="row"><button class="primary" id="go" data-t>Tiếp tục</button></div>
     <p class="err" id="pinErr"></p>
   </section>
 
   <div id="app" hidden>
     <section>
-      <h2>Tên nhà</h2>
-      <div class="row"><input id="name" placeholder="Nhà An ❤ Bình &amp; Mít"><button id="heart" title="Thêm trái tim">❤</button></div>
-      <small>Hiện trong lời chào ("Chúc buổi tối, …") và trên màn hình chờ. ❤ hiện thành trái tim đỏ.</small>
+      <h2 data-t>Tên nhà</h2>
+      <div class="row"><input id="name" data-tp="Nhà An ❤ Bình & Mít"><button id="heart">❤</button></div>
+      <small data-t>Hiện trong lời chào ("Chúc buổi tối, …") và trên màn hình chờ. ❤ hiện thành trái tim đỏ.</small>
     </section>
 
     <section>
-      <h2>Thành phố (thời tiết, không khí)</h2>
-      <input id="city" placeholder="Gõ tên: Cầu Giấy, Đà Lạt, Huế, Biên Hòa…">
+      <h2 data-t>Thành phố (thời tiết, không khí)</h2>
+      <input id="city" data-tp="Gõ tên: Cầu Giấy, Đà Lạt, Huế, Biên Hòa…">
       <ul id="cities"></ul>
       <small id="cityNow"></small>
     </section>
 
     <section>
-      <h2>Sinh nhật người nhà</h2>
+      <h2 data-t>Sinh nhật người nhà</h2>
       <div id="bdays"></div>
-      <button id="addBday">+ Thêm sinh nhật</button>
-      <small>Hiện ở hàng "Sắp tới" và trong Lịch. Tích "âm lịch" nếu là ngày âm.</small>
+      <button id="addBday" data-t>+ Thêm sinh nhật</button>
+      <small data-t>Hiện ở hàng "Sắp tới" và trong Lịch. Tích "âm lịch" nếu là ngày âm.</small>
     </section>
 
-    <button class="primary" id="save">Lưu tên nhà, thành phố, sinh nhật</button>
+    <button class="primary" id="save" data-t>Lưu tên nhà, thành phố, sinh nhật</button>
     <p id="saveMsg"></p>
 
     <section>
-      <h2>Ảnh gia đình</h2>
-      <p>Chọn một hay nhiều ảnh. Ảnh được thu nhỏ ngay trên máy này (1920×1080) rồi mới gửi lên TV; ảnh dọc được đặt khung
+      <h2 data-t>Ảnh gia đình</h2>
+      <p data-t>Chọn một hay nhiều ảnh. Ảnh được thu nhỏ ngay trên máy này (1920×1080) rồi mới gửi lên TV; ảnh dọc được đặt khung
         trên nền mờ. Ảnh hiện trên màn hình chờ và hình nền "Ảnh gia đình".</p>
       <input type="file" id="photos" accept="image/*" multiple>
       <p id="photoMsg"></p>
       <small id="photoNow"></small>
-      <div class="row"><button class="danger" id="clear">Xóa hết ảnh gia đình trên TV</button></div>
+      <div class="row"><button class="danger" id="clear" data-t>Xóa hết ảnh gia đình trên TV</button></div>
     </section>
 
     <section>
-      <h2>Ảnh avatar (góc phải màn hình)</h2>
+      <h2 data-t>Ảnh avatar (góc phải màn hình)</h2>
       <input type="file" id="avatar" accept="image/*">
       <p id="avatarMsg"></p>
     </section>
@@ -92,6 +94,82 @@
 (function () {
   var W = 1920, H = 1080;
   var $ = function (id) { return document.getElementById(id); };
+
+  // ---- language: the phone's own (vi or English), switchable with the link at the top ------------------
+
+  var EN = {
+    'Cài đặt màn hình chính TV': 'TV home screen setup',
+    'Màn hình chính TV': 'TV home screen',
+    'Cài đặt tên nhà, thành phố, ảnh gia đình và sinh nhật cho TV.': 'Set the family name, city, family photos and birthdays for the TV.',
+    'Mã PIN': 'PIN',
+    'Mã 6 số hiện trên TV: <b>Cài đặt → Cài đặt bằng điện thoại / máy tính</b>.': 'The 6-digit code shown on the TV: <b>Settings → Set up from a phone or computer</b>.',
+    'Tiếp tục': 'Continue',
+    'Tên nhà': 'Family name',
+    'Nhà An ❤ Bình & Mít': 'The Nguyens ❤ Anna & Tom',
+    'Thêm trái tim': 'Add a heart',
+    'Hiện trong lời chào ("Chúc buổi tối, …") và trên màn hình chờ. ❤ hiện thành trái tim đỏ.': 'Shown in the greeting ("Good evening, …") and on the screensaver. ❤ becomes a red heart.',
+    'Thành phố (thời tiết, không khí)': 'City (weather, air quality)',
+    'Gõ tên: Cầu Giấy, Đà Lạt, Huế, Biên Hòa…': 'Type a name: Hanoi, London, Sydney…',
+    'Sinh nhật người nhà': 'Family birthdays',
+    '+ Thêm sinh nhật': '+ Add a birthday',
+    'Hiện ở hàng "Sắp tới" và trong Lịch. Tích "âm lịch" nếu là ngày âm.': 'Shown in the "Coming up" row and in the Calendar. Tick "lunar" for a date in the lunar calendar.',
+    'Lưu tên nhà, thành phố, sinh nhật': 'Save name, city and birthdays',
+    'Ảnh gia đình': 'Family photos',
+    'Chọn một hay nhiều ảnh. Ảnh được thu nhỏ ngay trên máy này (1920×1080) rồi mới gửi lên TV; ảnh dọc được đặt khung trên nền mờ. Ảnh hiện trên màn hình chờ và hình nền "Ảnh gia đình".': 'Pick one or more photos. They are resized on this device (1920×1080) before they go to the TV; portrait photos are framed on a blurred background. They appear on the screensaver and in the "Family photos" wallpaper.',
+    'Xóa hết ảnh gia đình trên TV': 'Delete all family photos on the TV',
+    'Ảnh avatar (góc phải màn hình)': 'Avatar (top right of the screen)',
+    'Đang cài cho: {0}': 'Setting up: {0}',
+    ' · bản {0}': ' · version {0}',
+    'Đang dùng: {0}': 'Now: {0}',
+    'Trên TV đang có {0} ảnh gia đình.': 'The TV has {0} family photos.',
+    'Trên TV đang có {0} ảnh gia đình và ảnh avatar riêng.': 'The TV has {0} family photos and its own avatar.',
+    'Sẽ dùng: {0} (bấm Lưu)': 'Will use: {0} (press Save)',
+    'Không tìm được, thử lại.': 'Nothing found, try again.',
+    'Tên (Bà, Mẹ, Bé An…)': 'Name (Grandma, Mum, Anna…)',
+    'Ngày': 'Day',
+    'Tháng': 'Month',
+    'âm lịch': 'lunar',
+    'Bỏ': 'Remove',
+    'Đang gửi…': 'Sending…',
+    'Đã gửi. TV cập nhật sau vài giây.': 'Sent. The TV updates in a few seconds.',
+    'Không đọc được ảnh {0}': 'Could not read the photo {0}',
+    'Đã gửi {0} ảnh. TV cập nhật sau vài giây.': 'Sent {0} photos. The TV updates in a few seconds.',
+    'Chưa gửi được ảnh nào.': 'No photo could be sent.',
+    'Đang xử lý và gửi {0}/{1}…': 'Resizing and sending {0}/{1}…',
+    'Xóa hết ảnh gia đình trên TV?': 'Delete all family photos on the TV?',
+    'Đã gửi lệnh xóa.': 'Delete sent.',
+    'Sai mã PIN. Xem mã trên TV: Cài đặt → Cài đặt bằng điện thoại.': 'Wrong PIN. See the code on the TV: Settings → Set up from a phone or computer.',
+    'Ảnh quá lớn': 'The photo is too large',
+    'Dữ liệu không hợp lệ': 'Invalid data',
+    'Không hiểu yêu cầu': 'Unknown request'
+  };
+  var lang = localStorage.getItem('nhaminh.setupLang') || (/^vi/i.test(navigator.language || '') ? 'vi' : 'en');
+
+  function L(text) {
+    var args = arguments, t = lang === 'en' && EN[text] !== undefined ? EN[text] : text;
+    return t.replace(/\{(\d)\}/g, function (m, i) { return args[+i + 1]; });
+  }
+
+  // Static text: data-t elements (their HTML is the key) and data-tp placeholders, kept in Vietnamese in data-vi.
+  function applyLang() {
+    document.documentElement.lang = lang;
+    Array.prototype.forEach.call(document.querySelectorAll('[data-t]'), function (el) {
+      if (!el.hasAttribute('data-vi')) el.setAttribute('data-vi', el.innerHTML.replace(/\s+/g, ' ').trim());
+      el.innerHTML = L(el.getAttribute('data-vi'));
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-tp]'), function (el) { el.placeholder = L(el.getAttribute('data-tp')); });
+    $('heart').title = L('Thêm trái tim');
+    $('lang').textContent = lang === 'en' ? 'Tiếng Việt' : 'English';
+  }
+  $('lang').onclick = function (e) {
+    e.preventDefault();
+    lang = lang === 'en' ? 'vi' : 'en';
+    localStorage.setItem('nhaminh.setupLang', lang);
+    applyLang();
+    if (state) show(state);
+  };
+  var state = null;
+  applyLang();
   var pin = sessionStorage.getItem('pin') || '';
   var place = null;   // the city picked from the search
 
@@ -109,17 +187,21 @@
       $('pinBox').hidden = true;
       $('app').hidden = false;
       show(j.state || {});
-    }).catch(function (e) { $('pinErr').textContent = e.message; });
+    }).catch(function (e) { $('pinErr').textContent = L(e.message); });
   }
   $('go').onclick = function () { pin = $('pin').value.trim(); start(); };
   $('pin').onkeydown = function (e) { if (e.key === 'Enter') $('go').click(); };
   if (pin) start();
 
   function show(s) {
-    $('who').textContent = 'Đang cài cho: ' + (s.familyName || 'TV') + (s.version ? ' · bản ' + s.version : '');
-    $('name').value = s.familyName || '';
-    $('cityNow').textContent = s.location ? 'Đang dùng: ' + s.location.name : '';
-    $('photoNow').textContent = 'Trên TV đang có ' + (s.photos || 0) + ' ảnh gia đình' + (s.avatar ? ' và ảnh avatar riêng.' : '.');
+    var first = !state;
+    state = s;
+    $('who').textContent = L('Đang cài cho: {0}', s.familyName || 'TV') + (s.version ? L(' · bản {0}', s.version) : '');
+    if (first) $('name').value = s.familyName || '';
+    $('cityNow').textContent = s.location ? L('Đang dùng: {0}', s.location.name) : '';
+    $('photoNow').textContent = s.avatar ? L('Trên TV đang có {0} ảnh gia đình và ảnh avatar riêng.', s.photos || 0) :
+      L('Trên TV đang có {0} ảnh gia đình.', s.photos || 0);
+    if (!first) return;
     $('bdays').innerHTML = '';
     (s.birthdays || []).forEach(addBday);
   }
@@ -134,7 +216,7 @@
     var q = this.value.trim();
     if (q.length < 2) { $('cities').innerHTML = ''; return; }
     searchTimer = setTimeout(function () {
-      fetch('https://geocoding-api.open-meteo.com/v1/search?count=8&language=vi&format=json&name=' + encodeURIComponent(q))
+      fetch('https://geocoding-api.open-meteo.com/v1/search?count=8&format=json&language=' + lang + '&name=' + encodeURIComponent(q))
         .then(function (r) { return r.json(); })
         .then(function (j) {
           $('cities').innerHTML = '';
@@ -147,11 +229,11 @@
                 longitude: c.longitude, timezone: c.timezone || 'auto' };
               $('city').value = li.textContent;
               $('cities').innerHTML = '';
-              $('cityNow').textContent = 'Sẽ dùng: ' + place.name + ' (bấm Lưu)';
+              $('cityNow').textContent = L('Sẽ dùng: {0} (bấm Lưu)', place.name);
             };
             $('cities').appendChild(li);
           });
-        }).catch(function () { $('cities').innerHTML = '<li>Không tìm được, thử lại.</li>'; });
+        }).catch(function () { $('cities').innerHTML = '<li>' + L('Không tìm được, thử lại.') + '</li>'; });
     }, 350);
   };
 
@@ -161,9 +243,9 @@
     b = b || {};
     var row = document.createElement('div');
     row.className = 'bday';
-    row.innerHTML = '<input class="n" placeholder="Tên (Bà, Mẹ, Bé An…)"><input class="d" type="number" min="1" max="31" placeholder="Ngày">' +
-      '<input class="m" type="number" min="1" max="12" placeholder="Tháng"><label><input class="l" type="checkbox"> âm lịch</label>' +
-      '<button title="Bỏ">✕</button>';
+    row.innerHTML = '<input class="n" placeholder="' + L('Tên (Bà, Mẹ, Bé An…)') + '"><input class="d" type="number" min="1" max="31" placeholder="' +
+      L('Ngày') + '"><input class="m" type="number" min="1" max="12" placeholder="' + L('Tháng') + '"><label><input class="l" type="checkbox"> ' +
+      L('âm lịch') + '</label><button title="' + L('Bỏ') + '">✕</button>';
     row.querySelector('.n').value = b.name || '';
     row.querySelector('.d').value = b.day || '';
     row.querySelector('.m').value = b.month || '';
@@ -184,11 +266,11 @@
     var body = { familyName: $('name').value.trim(), birthdays: birthdays() };
     if (place) body.location = place;
     $('saveMsg').className = '';
-    $('saveMsg').textContent = 'Đang gửi…';
+    $('saveMsg').textContent = L('Đang gửi…');
     api('POST', '/api/profile', body).then(function () {
       $('saveMsg').className = 'ok';
-      $('saveMsg').textContent = 'Đã gửi. TV cập nhật sau vài giây.';
-    }).catch(function (e) { $('saveMsg').className = 'err'; $('saveMsg').textContent = e.message; });
+      $('saveMsg').textContent = L('Đã gửi. TV cập nhật sau vài giây.');
+    }).catch(function (e) { $('saveMsg').className = 'err'; $('saveMsg').textContent = L(e.message); });
   };
 
   // ---- photos: resized here, like tools/photos.py ------------------------------------------------------
@@ -197,7 +279,7 @@
     return new Promise(function (resolve, reject) {
       var url = URL.createObjectURL(file), img = new Image();
       img.onload = function () { resolve(img); };
-      img.onerror = function () { reject(new Error('Không đọc được ảnh ' + file.name)); };
+      img.onerror = function () { reject(new Error(L('Không đọc được ảnh {0}', file.name))); };
       img.src = url;
     });
   }
@@ -256,15 +338,15 @@
     function next() {
       if (i >= files.length) {
         $(msg).className = sent ? 'ok' : 'err';
-        $(msg).textContent = sent ? 'Đã gửi ' + sent + ' ảnh. TV cập nhật sau vài giây.' : 'Chưa gửi được ảnh nào.';
+        $(msg).textContent = sent ? L('Đã gửi {0} ảnh. TV cập nhật sau vài giây.', sent) : L('Chưa gửi được ảnh nào.');
         return;
       }
       var f = files[i++];
       $(msg).className = '';
-      $(msg).textContent = 'Đang xử lý và gửi ' + i + '/' + files.length + '…';
+      $(msg).textContent = L('Đang xử lý và gửi {0}/{1}…', i, files.length);
       loadImage(f).then(function (img) {
         return api('POST', '/api/photo', { kind: kind, data: kind === 'avatar' ? square(img) : frame(img) });
-      }).then(function () { sent++; next(); }).catch(function (e) { $(msg).className = 'err'; $(msg).textContent = e.message; next(); });
+      }).then(function () { sent++; next(); }).catch(function (e) { $(msg).className = 'err'; $(msg).textContent = L(e.message); next(); });
     }
     next();
   }
@@ -272,9 +354,9 @@
   $('photos').onchange = function () { sendPhotos(Array.prototype.slice.call(this.files), 'family', 'photoMsg'); this.value = ''; };
   $('avatar').onchange = function () { sendPhotos(Array.prototype.slice.call(this.files, 0, 1), 'avatar', 'avatarMsg'); this.value = ''; };
   $('clear').onclick = function () {
-    if (!confirm('Xóa hết ảnh gia đình trên TV?')) return;
-    api('POST', '/api/clear-photos', {}).then(function () { $('photoMsg').className = 'ok'; $('photoMsg').textContent = 'Đã gửi lệnh xóa.'; })
-      .catch(function (e) { $('photoMsg').className = 'err'; $('photoMsg').textContent = e.message; });
+    if (!confirm(L('Xóa hết ảnh gia đình trên TV?'))) return;
+    api('POST', '/api/clear-photos', {}).then(function () { $('photoMsg').className = 'ok'; $('photoMsg').textContent = L('Đã gửi lệnh xóa.'); })
+      .catch(function (e) { $('photoMsg').className = 'err'; $('photoMsg').textContent = L(e.message); });
   };
 })();
 </script>

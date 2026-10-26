@@ -2,7 +2,7 @@
 // Tên nhà, vị trí, ảnh gia đình của riêng bạn: đặt trong local/config.local.js (không lên Git, xem README).
 // Sửa xong chạy tools/tvdev.py deploy.
 window.CONFIG = {
-  familyName: 'Nhà Mình ❤ Gia Đình',   // ❤ hiện thành trái tim vẽ bằng SVG
+  familyName: 'Nhà Mình ❤ Gia Đình',   // ❤ hiện thành trái tim vẽ bằng SVG; giao diện tiếng Anh hiện tên mặc định này là "Our Home ❤ Family"
 
   // Thời tiết và chất lượng không khí (Open-Meteo, không cần API key). Đổi được trong Cài đặt → Thời tiết.
   location: { name: 'Hà Nội (Hoàn Kiếm)', latitude: 21.03, longitude: 105.85, timezone: 'Asia/Bangkok' },
@@ -54,6 +54,7 @@ window.CONFIG = {
   birthdays: [],
 
   defaults: {
+    language: 'auto',          // 'auto' (theo ngôn ngữ menu của TV) | 'vi' | 'en'
     screensaverAfter: 3,       // phút không bấm gì thì bật màn hình chờ; 0 = tắt
     photoSource: 'bing',       // 'bing' | 'mix' (Bing + Wikimedia)
     photoInterval: 30,         // giây giữa hai ảnh
@@ -61,6 +62,8 @@ window.CONFIG = {
     columns: 4,                // số ô mỗi hàng: 4 | 5 | 6
     showToday: true,           // khối "Hôm nay": ngày này năm xưa, câu nói hay, tin mới
     showMarkets: true,         // giá vàng (PNJ) và tỷ giá USD (Vietcombank) trong khối "Hôm nay"
+    showWords: true,           // Học tiếng Anh: ô riêng, một từ mỗi ngày trong "Hôm nay" và trên màn hình chờ
+    wordLevel: 'basic',        // 'basic' | 'middle' | 'advanced'
     showStats: false,          // CPU và bộ nhớ trống dưới đồng hồ
     returnHome: true,          // thoát app mở từ đây (YouTube, Netflix…) thì quay về màn hình này
     closeHidden: 5,            // phút: app chạy ẩn lâu hơn thì dịch vụ nền đóng để giải phóng RAM; 0 = không

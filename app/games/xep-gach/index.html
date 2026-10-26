@@ -36,10 +36,10 @@ html, body { background: #07070a; color: #eee; }
 
   <div id="tetris">
     <div id="menu">
-      <p id="start"><a href="javascript:play();">Bấm OK để chơi</a></p>
+      <p id="start"><a href="javascript:play();" data-en="Press OK to play">Bấm OK để chơi</a></p>
       <p><canvas id="upcoming"></canvas></p>
-      <p>điểm <span id="score">00000</span></p>
-      <p>hàng <span id="rows">0</span></p>
+      <p><span data-en="score">điểm</span> <span id="score">00000</span></p>
+      <p><span data-en="lines">hàng</span> <span id="rows">0</span></p>
     </div>
     <canvas id="canvas">
       Sorry, this example cannot be run because your browser does not support the &lt;canvas&gt; element
