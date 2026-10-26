@@ -56,6 +56,8 @@ that brings you back home when you leave an app. Vietnamese or English UI, follo
 - **Màn hình chờ** sau 3 phút không bấm gì: ảnh chuyển mờ dần xen ảnh gia đình, đồng hồ, âm lịch, thời tiết, câu nói.
 - **Cài đặt bằng điện thoại hoặc laptop**: quét mã QR trên TV, nhập mã PIN, rồi đặt tên nhà, thành phố, sinh nhật, tải
   ảnh gia đình và ảnh avatar ngay từ trình duyệt.
+- **YouTube không quảng cáo (tùy chọn)**: cài thêm [TizenTube](https://github.com/reisxd/TizenTube) (bên thứ ba) thì nó
+  hiện thành một ô riêng, có icon và mô tả; cách cài và lưu ý về Host PC IP, TizenBrew: [hướng dẫn cài đặt](docs/huong-dan-cai-dat.md#youtube-không-quảng-cáo-tizentube-không-bắt-buộc).
 - **Thoát app là về đây**: dịch vụ nền canh app đang mở (kể cả mở từ Smart Hub) và đưa về màn hình chính, thường dưới
   1 giây. Bật TV từ chế độ ngủ cũng vào thẳng màn hình chính.
 - **Giải phóng RAM**: app chạy ẩn quá 5 phút (Netflix thoát ra vẫn chạy ngầm) được đóng lại.
@@ -122,6 +124,7 @@ python3 tools/tvdev.py setup                  # một lần: Tizen Studio CLI, c
 python3 tools/tvdev.py deploy --tv <IP TV>    # kiểm tra, đóng gói (ghép local/), cài lên TV, mở app
 python3 tools/tvdev.py check                  # chặn cú pháp JS/CSS mà Chromium 69 của TV không hiểu
 python3 tools/tvdev.py release                # đóng gói bản công khai vào dist/
+python3 tools/tvdev.py install --tv <IP TV> app.wgt   # ký lại một file .wgt khác (vd. TizenTube) bằng chứng chỉ này và cài
 python3 tools/preview.py                      # xem thử trên Chrome: http://localhost:8765 (ghép local/)
 python3 tools/preview.py 8765 --public        # đúng như người khác thấy khi clone repo
 node --test tests/*.test.js                   # test: lịch vạn niên, ngày lễ, câu nói, giá vàng, danh sách app, dịch vụ nền,

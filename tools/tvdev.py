@@ -9,6 +9,7 @@ Người dùng bình thường không cần file này: cài bản có sẵn bằ
     python3 tools/tvdev.py deploy --no-run       # cài nhưng không mở
     python3 tools/tvdev.py debug --tv <IP TV>    # mở app ở chế độ debug, chuyển cổng về máy này (cho inspect.js)
     python3 tools/tvdev.py release               # đóng gói bản công khai (không có local/) vào dist/
+    python3 tools/tvdev.py install --tv <IP TV> app.wgt   # ký lại một file .wgt bất kỳ (vd. TizenTube) và cài lên TV
 
 Trên Windows thay python3 bằng py. IP của TV có thể đặt sẵn bằng biến môi trường TV_HOST.
 """
@@ -275,6 +276,16 @@ def build(public):
                 tag = pat[1:pat.index(">")]
                 s = re.sub(pat, "<%s>%s</%s>" % (tag, name, tag), s, count=1)
                 open(p, "w", encoding="utf-8").write(s)
+    dest = os.path.join(DIST, "NhaMinh.wgt" if not public else "NhaMinh-%s.wgt" % version())
+    sign(src, dest)
+    shutil.rmtree(tmp, ignore_errors=True)
+    return dest
+
+
+def sign(src, dest):
+    """Package and sign the folder src with our certificate into dest (a .wgt)."""
+    need_tizen()
+    tmp = tempfile.mkdtemp()
     out = os.path.join(tmp, "out")
     cmd = [tizen_bin(), "package", "-t", "wgt", "-s", PROFILE, "-o", out, "--", src]
     pass_file = os.path.join(tizen_data(), PROFILE + ".pass")
@@ -292,12 +303,10 @@ def build(public):
             print("--- cuối " + log + " ---")
             print("".join(open(log, encoding="utf-8", errors="replace").readlines()[-40:]))
         die("đóng gói không xong (đã chạy tvdev.py setup chưa?)")
-    os.makedirs(DIST, exist_ok=True)
+    os.makedirs(os.path.dirname(dest), exist_ok=True)
     # The package is named after <name> (may have Vietnamese letters); the installer wants a plain file name.
-    dest = os.path.join(DIST, "NhaMinh.wgt" if not public else "NhaMinh-%s.wgt" % version())
     shutil.move(os.path.join(out, wgts[0]), dest)
     shutil.rmtree(tmp, ignore_errors=True)
-    return dest
 
 
 def version():
@@ -312,18 +321,45 @@ def connect(target):
         die("không thấy TV ở %s. Kiểm tra: TV đang bật, Developer Mode bật, Host PC IP = IP của máy này." % target)
 
 
+def install_wgt(wgt, target):
+    r = run([tizen_bin(), "install", "-n", os.path.basename(wgt), "-s", target, "--", os.path.dirname(wgt)], check=False, capture=True)
+    if "successfully installed" not in (r.stdout or ""):
+        print((r.stdout or "") + (r.stderr or ""))
+        die("cài lên TV không xong")
+    print("Đã cài %d MB lên TV %s" % (os.path.getsize(wgt) // 1048576, target))
+
+
 def deploy(args):
     target = tv_target(args)
     check()
     connect(target)
     wgt = build(public=False)
-    r = run([tizen_bin(), "install", "-n", os.path.basename(wgt), "-s", target, "--", DIST], check=False, capture=True)
-    if "successfully installed" not in (r.stdout or ""):
-        print((r.stdout or "") + (r.stderr or ""))
-        die("cài lên TV không xong")
-    print("Đã cài %d MB lên TV %s" % (os.path.getsize(wgt) // 1048576, target))
+    install_wgt(wgt, target)
     if not args.no_run:
         run([tizen_bin(), "run", "-p", APP_ID, "-s", target], check=False)
+
+
+def install(args):
+    """Another app's .wgt (TizenTube, a game…): its signatures replaced by ours, then installed like this one."""
+    import zipfile
+    target = tv_target(args)
+    if not os.path.isfile(args.wgt):
+        die("không thấy file " + args.wgt)
+    tmp = tempfile.mkdtemp()
+    src = os.path.join(tmp, "app")
+    with zipfile.ZipFile(args.wgt) as z:
+        z.extractall(src)
+    for n in os.listdir(src):
+        if re.match(r"(author-)?signature\d*\.xml$", n):
+            os.remove(os.path.join(src, n))
+    m = re.search(r'<tizen:application[^>]*\sid="([^"]+)"', open(os.path.join(src, "config.xml"), encoding="utf-8").read())
+    connect(target)
+    dest = os.path.join(tmp, "signed", "app.wgt")
+    sign(src, dest)
+    install_wgt(dest, target)
+    if m and not args.no_run:
+        run([tizen_bin(), "run", "-p", m.group(1), "-s", target], check=False)
+    shutil.rmtree(tmp, ignore_errors=True)
 
 
 def debug(args):
@@ -365,8 +401,12 @@ def main():
     p = sub.add_parser("debug", help="mở app ở chế độ debug")
     p.add_argument("--tv", help="IP của TV (hoặc biến TV_HOST)")
     sub.add_parser("release", help="đóng gói bản công khai vào dist/")
+    p = sub.add_parser("install", help="ký lại một file .wgt khác (vd. TizenTube) và cài lên TV")
+    p.add_argument("wgt", help="file .wgt")
+    p.add_argument("--tv", help="IP của TV (hoặc biến TV_HOST)")
+    p.add_argument("--no-run", action="store_true", help="cài nhưng không mở app")
     args = ap.parse_args()
-    {"setup": setup, "check": check, "deploy": deploy, "debug": debug, "release": release}[args.cmd](args)
+    {"setup": setup, "check": check, "deploy": deploy, "debug": debug, "release": release, "install": install}[args.cmd](args)
 
 
 if __name__ == "__main__":

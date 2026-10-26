@@ -16,4 +16,5 @@ It includes or derives from:
 - Lunar calendar algorithm after Hồ Ngọc Đức (https://www.informatik.uni-leipzig.de/~duc/amlich/)
 - Data: Bing Image of the Day, Wikimedia Commons featured pictures, Open-Meteo (weather, air quality). Word of the Day:
   Datamuse API, Free Dictionary API (Wiktionary data, CC BY-SA), Google Translate (meanings, translations, speech).
-- App icons in app/icons/ are the apps' own store artwork, shown only to launch those apps on this TV.
+- App icons in app/icons/ are the apps' own store artwork (TizenBrew's and TizenTube's come from their GPL-3.0 packages),
+  shown only to launch those apps on this TV.

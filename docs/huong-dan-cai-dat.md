@@ -95,6 +95,27 @@ Ngôn ngữ / Language**.
 
 Để bật TV là vào màn hình chính, bớt quảng cáo và theo dõi, TV nhẹ hơn: làm theo [cai-dat-tv.md](cai-dat-tv.md).
 
+## YouTube không quảng cáo (TizenTube, không bắt buộc)
+
+[TizenTube](https://github.com/reisxd/TizenTube) (mã nguồn mở, GPL-3.0, không thuộc dự án này) là YouTube bỏ quảng cáo
+và tự bỏ qua đoạn tài trợ (SponsorBlock). Có YouTube Premium thì không cần. Nó là bản sửa của bên thứ ba, dùng hay
+không là lựa chọn của bạn.
+
+1. Tải ở [bản phát hành mới nhất của TizenTube](https://github.com/reisxd/TizenTube/releases/latest):
+   - TV đời 2017–2020 (Tizen 3 đến 5.5): **`TizenTubeOld.wgt`**;
+   - TV đời 2021 trở đi (Tizen 6+): **`TizenTubeCobalt.wgt`**.
+2. Cài như bước 5: Apps2Samsung → *Custom WGT / TPK* → chọn file vừa tải → *Cài ngay*. Với `TizenTubeCobalt.wgt`,
+   trước khi cài mở cài đặt (bánh răng) của Apps2Samsung, bật *Force Samsung Certificate* và *Partner Signing*.
+   Người dùng `tools/tvdev.py` cài bằng: `python3 tools/tvdev.py install --tv <IP TV> TizenTubeOld.wgt`.
+3. Trên màn hình chính, TizenTube hiện thành một ô ở các hàng dưới. Muốn nó thay YouTube trên dock: giữ OK trên ô để di
+   chuyển. Hàng video trên dock vẫn mở bằng YouTube gốc: gửi một video sang TizenTube thì nó chỉ mở trang chủ YouTube.
+
+**Host PC IP và TizenBrew.** TizenBrew, và TizenTube bản cho TV cũ khi muốn chạy ổn định nhất, cần ô *Host PC IP* trong
+Developer Mode (bước 2) là **`127.0.0.1`**: chúng tự gắn trình gỡ lỗi của TV vào chính mình. Với IP của máy tính hay
+điện thoại, TizenBrew không mở được module, còn TizenTube bản cũ chạy kiểu proxy (đôi khi phát video kém hơn).
+Màn hình chính không cần Host PC IP để chạy, nên có thể để `127.0.0.1` hằng ngày; chỉ khi cài hay cập nhật app bằng
+Apps2Samsung hoặc `tvdev.py` mới đổi tạm về IP của máy dùng để cài, cài xong đổi lại rồi khởi động lại TV.
+
 ## Cập nhật bản mới
 
 Khi có bản mới, màn hình chính báo ở **Cài đặt → Thông tin**. Tải file `.wgt` mới (bước 4) rồi cài **bằng đúng cách đã

@@ -67,6 +67,9 @@ function appState(ids, cb) {
 }
 
 var HIDDEN_MS = 1200;   // an app that stays out of sight this long was left (Back on Netflix only hides it)
+// TizenBrew and TizenTube (packages xvvl3S1…) close themselves and start again under the TV's debugger when Developer
+// Mode's Host PC IP is 127.0.0.1 (selfDebug): give them this long to come back before taking them for closed.
+var RESTARTS = /^xvvl3S1/, RESTART_MS = 10000;
 
 /** cb(true) when any of these apps is on screen: the user went on to something else themselves. */
 function anyVisible(ids, cb) {
@@ -128,7 +131,7 @@ function guard() {
 
 // ---- power: the TV going to sleep -----------------------------------------------------------------
 
-var POWER_MS = 1500, powerAt = 0, power = 'on';
+var POWER_MS = 1500, powerAt = 0, power = 'on', selfDebug = false;
 
 function powerState(cb) {
   var done = false;
@@ -138,7 +141,12 @@ function powerState(cb) {
       var body = '';
       res.on('data', function (d) { body += d; });
       res.on('end', function () {
-        try { finish((JSON.parse(body).device || {}).PowerState || null); } catch (e) { finish(null); }
+        try {
+          var d = JSON.parse(body).device || {};
+          // Host PC IP 127.0.0.1 (stored reversed on some TVs): TizenBrew and TizenTube restart under the debugger.
+          selfDebug = d.developerMode === '1' && (d.developerIP === '127.0.0.1' || d.developerIP === '1.0.0.127');
+          finish(d.PowerState || null);
+        } catch (e) { finish(null); }
       });
     });
     req.on('error', function () { finish(null); });
@@ -347,10 +355,14 @@ function tick() {
   if (Date.now() - watched.since > GIVE_UP_MS && !watched.seenRunning) { watched = null; return; }
   appState(watched.ids, function (s) {
     if (!watched || !s) return;
-    if (s.visible) { watched.seenRunning = true; watched.hiddenSince = 0; return; }
+    if (s.visible) { watched.seenRunning = true; watched.hiddenSince = 0; watched.goneSince = 0; return; }
     if (s.running && !watched.seenRunning) return;        // still starting
     var others = watched.others;
     if (!s.running && watched.seenRunning) {              // it ran and now it is gone: the user closed it
+      if (selfDebug && watched.ids.some(function (id) { return RESTARTS.test(id); })) {
+        if (!watched.goneSince) { watched.goneSince = Date.now(); return; }   // …unless it is restarting itself
+        if (Date.now() - watched.goneSince < RESTART_MS) return;
+      }
       watched = null;
       return goHome(others);
     }

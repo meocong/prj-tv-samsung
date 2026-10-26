@@ -39,7 +39,7 @@ BANNER = (720, 405)
 # None = our own glyph in tools/glyphs/<name>.svg (Samsung's built-in apps have no store icon).
 ICONS = [
     (r"^youtube$", ("YouTube", "Google", "YouTube")),
-    (r"netflix", ("Netflix", "Netflix", "Netflix")),
+    (r"netflix", None),   # the store's iOS 26 artwork has a glossy rim that breaks up on a TV: our own flat N
     (r"prime video", ("Prime Video", "AMZN", "Prime Video")),
     (r"vieon", ("VieON", "VIEON", "VieON")),
     (r"fpt play", ("FPT Play", "FPT", "FPT Play")),
@@ -59,6 +59,7 @@ ICONS = [
     (r"^internet$", None),
     (r"^gallery$", None),
     (r"tizenbrew", ("file", "tizenbrew.png")),   # icon taken from TizenBrew's own package
+    (r"^tizentube", ("banner", "tizentube.png")),   # TizenTube's own 16:9 artwork, used as it is
 ]
 # One line shown under the app's name when it is focused (Apple TV's top shelf, in words).
 DESCRIPTIONS = [
@@ -80,6 +81,7 @@ DESCRIPTIONS = [
     (r"vtvcab", "Truyền hình cáp VTVcab, thể thao và phim"),
     (r"kplus|k\+", "Bóng đá, phim và các kênh K+"),
     (r"tizenbrew", "Cài module cho TV, như TizenTube"),
+    (r"^tizentube", "YouTube không quảng cáo, tự bỏ qua đoạn tài trợ (SponsorBlock)"),
     (r"apple music", "Nhạc Apple Music"),
     (r"spotify", "Nhạc và podcast"),
     (r"zing mp3", "Nhạc Việt và bảng xếp hạng"),
@@ -88,7 +90,7 @@ DESCRIPTIONS = [
 TITLES = [(r"^tizenbrew", "TizenBrew"), (r"^spotify", "Spotify"), (r"^kplus", "K+"),
           (r"^vtvgo truyền hình", "VTVgo"), (r"^vtv giải trí", "VTV Giải Trí"), (r"^mytv", "MyTV")]
 # Store artwork with a light rim baked into its edges (iOS 26 style): cropped before building the banner.
-RIMMED = [r"netflix", r"^apple tv", r"apple music", r"spotify", r"vtvcab", r"zing mp3"]
+RIMMED = [r"^apple tv", r"apple music", r"spotify", r"vtvcab", r"zing mp3"]
 HIDE = [r"^e-manual$", r"^nhà ", r"^nha minh", r"^tizenbrew installer"]
 
 
@@ -289,7 +291,7 @@ def main():
             raw = os.path.join(CACHE, "%s.png" % entry["storeId"])
             if not os.path.exists(raw):
                 try:
-                    if spec and spec[0] == "file":
+                    if spec and spec[0] in ("file", "banner"):
                         shutil.copyfile(os.path.join(HERE, "glyphs", spec[1]), raw)
                     elif spec is None:
                         svg = os.path.join(HERE, "glyphs", "%s.svg" % re.sub(r"\W+", "-", low).strip("-"))
@@ -303,7 +305,11 @@ def main():
                     print("  ! %s: %s" % (title, e))
             if os.path.exists(raw):
                 fname = "%s.jpg" % entry["storeId"]
-                make_banner(raw, os.path.join(ICON_DIR, fname), any(re.search(p, low) for p in RIMMED))
+                if spec and spec[0] == "banner":   # already 16:9
+                    Image.open(raw).convert("RGB").resize(BANNER, Image.LANCZOS).save(
+                        os.path.join(ICON_DIR, fname), "JPEG", quality=88, optimize=True)
+                else:
+                    make_banner(raw, os.path.join(ICON_DIR, fname), any(re.search(p, low) for p in RIMMED))
                 entry["icon"] = "icons/" + fname
             break
         out.append(entry)

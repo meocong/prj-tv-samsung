@@ -163,6 +163,14 @@ window.TV_APPS = [
     "icon": "icons/3202201026334.jpg"
   },
   {
+    "id": "xvvl3S1TT1.TizenTubeStandalone",
+    "storeId": "xvvl3S1TT1.TizenTubeStandalone",
+    "title": "TizenTube",
+    "uses": 2,
+    "desc": "YouTube không quảng cáo, tự bỏ qua đoạn tài trợ (SponsorBlock)",
+    "icon": "icons/xvvl3S1TT1.TizenTubeStandalone.jpg"
+  },
+  {
     "id": "xvvl3S1bvH.TizenBrewStandalone",
     "storeId": "xvvl3S1bvH.TizenBrewStandalone",
     "title": "TizenBrew",

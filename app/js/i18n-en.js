@@ -358,6 +358,7 @@ window.I18N_EN = {
   'Truyền hình cáp VTVcab, thể thao và phim': 'VTVcab cable TV, sport and films',
   'Bóng đá, phim và các kênh K+': 'Football, films and the K+ channels',
   'Cài module cho TV, như TizenTube': 'Modules for the TV, such as TizenTube',
+  'YouTube không quảng cáo, tự bỏ qua đoạn tài trợ (SponsorBlock)': 'YouTube without ads, sponsored segments skipped (SponsorBlock)',
   'Nhạc Apple Music': 'Apple Music',
   'Nhạc và podcast': 'Music and podcasts',
   'Nhạc Việt và bảng xếp hạng': 'Vietnamese music and charts'

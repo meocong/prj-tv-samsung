@@ -35,6 +35,11 @@ The UI follows the TV's menu language: Vietnamese, or English for any other lang
 - **Screensaver** after 3 idle minutes: crossfading photos (family photos mixed in), clock, weather, a saying, the word.
 - **Setup from a phone or laptop**: scan the QR code on the TV, enter the PIN, then set the family name, the city,
   birthdays, family photos and an avatar from the browser. The page is in English or Vietnamese.
+- **Ad-free YouTube (optional)**: install [TizenTube](https://github.com/reisxd/TizenTube) (third party) and it shows as
+  its own tile with artwork and a description. `TizenTubeOld.wgt` is for 2017–2020 TVs, `TizenTubeCobalt.wgt` for 2021
+  and later (in Apps2Samsung's settings turn on *Force Samsung Certificate* and *Partner Signing* for Cobalt). TizenBrew,
+  and TizenTube on older TVs at its best, need Developer Mode's *Host PC IP* set to `127.0.0.1`; the home screen keeps
+  working with that, so switch to your computer's IP only while installing or updating apps.
 - **Back home after every app**: a background service watches the app you opened (from here or from Smart Hub) and
   brings the home screen back, usually within a second. Waking the TV from standby lands here too.
 - **Frees memory**: apps left running in the background for more than 5 minutes are closed.
@@ -83,6 +88,7 @@ python3 tools/tvdev.py setup                  # once: Tizen Studio CLI, signing 
 python3 tools/tvdev.py deploy --tv <TV IP>    # check, package (with local/), install on the TV, open the app
 python3 tools/tvdev.py check                  # rejects JS/CSS that the TV's Chromium 69 does not understand
 python3 tools/tvdev.py release                # package the public build into dist/
+python3 tools/tvdev.py install --tv <TV IP> app.wgt   # re-sign another .wgt (TizenTube…) with this certificate and install it
 python3 tools/preview.py 8765 --public        # preview in Chrome at http://localhost:8765
 node --test tests/*.test.js                   # tests: lunar calendar, holidays, sayings, prices, apps, service,
                                               # English strings, word choice…
