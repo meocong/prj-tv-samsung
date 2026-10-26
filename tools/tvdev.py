@@ -67,7 +67,10 @@ def run(cmd, check=True, capture=False, **kw):
     if check and r.returncode != 0:
         if capture:
             print((r.stdout or "") + (r.stderr or ""))
-        die("lệnh thất bại: " + " ".join(os.path.basename(c) if i == 0 else c for i, c in enumerate(cmd)))
+        shown = []
+        for i, c in enumerate(cmd):   # never print a password ("-p <password>")
+            shown.append("***" if i and cmd[i - 1] in ("-p", "-dp") else os.path.basename(c) if i == 0 else c)
+        die("lệnh thất bại: " + " ".join(shown))
     return r
 
 
@@ -165,6 +168,13 @@ def setup(args):
         say("Tạo chứng chỉ ký app " + cert)
         run([tizen_bin(), "certificate", "-a", PROFILE, "-p", password, "-c", "VN", "-ct", "Ha Noi", "-n", "Nha Minh",
              "-f", PROFILE])
+    # The CLI remembers where profiles.xml lives; a fresh data folder (new machine, CI cache) needs the file to exist.
+    profiles_xml = os.path.join(data, "profile", "profiles.xml")
+    os.makedirs(os.path.dirname(profiles_xml), exist_ok=True)
+    run([tizen_bin(), "cli-config", "default.profiles.path=" + profiles_xml], check=False, capture=True)
+    if not os.path.exists(profiles_xml):
+        with open(profiles_xml, "w", encoding="utf-8") as f:
+            f.write('<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n<profiles active="%s" version="3.1">\n</profiles>\n' % PROFILE)
     profiles = run([tizen_bin(), "security-profiles", "list"], check=False, capture=True).stdout or ""
     if not re.search(r"\b%s\b" % re.escape(PROFILE), profiles):
         say("Tạo security profile " + PROFILE)
