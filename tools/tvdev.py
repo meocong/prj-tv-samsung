@@ -136,6 +136,7 @@ def setup(args):
         run([tizen_bin(), "security-profiles", "add", "-n", PROFILE, "-a", cert, "-p", password])
     run([tizen_bin(), "cli-config", "default.profiles.path=" + os.path.join(data, "profile", "profiles.xml")],
         check=False, capture=True)
+    fix_linux_passwords(os.path.join(data, "profile", "profiles.xml"), password)
 
     venv = os.path.join(ROOT, "tools", ".venv")
     py = os.path.join(venv, "Scripts" if WINDOWS else "bin", "python")
@@ -146,6 +147,28 @@ def setup(args):
         run([py, "-m", "pip", "install", "-q", "samsungtvws", "pillow"])
     say("Xong. Bước tiếp: bật Developer Mode trên TV (docs/huong-dan-cai-dat.md), rồi chạy"
         " python3 tools/tvdev.py deploy --tv <IP TV>")
+
+
+DISTRIBUTOR_PASSWORD = "tizenpkcs12passfordsigner"   # the public password of Tizen's own distributor certificate
+
+
+def fix_linux_passwords(profiles, password):
+    """Without a desktop keyring (Linux servers, CI) the CLI keeps no .pwd files and signing fails with "Invalid
+    password": write the passwords into profiles.xml itself, as the Tizen Docker images do."""
+    if platform.system() != "Linux" or not os.path.exists(profiles):   # macOS and Windows keep them in their keychain
+        return
+    s = open(profiles, encoding="utf-8").read()
+
+    def repl(m):
+        key, pwd = m.group(1), m.group(2)
+        if not pwd.endswith(".pwd") or os.path.exists(pwd):
+            return m.group(0)
+        return m.group(0).replace('password="%s"' % pwd, 'password="%s"' % (DISTRIBUTOR_PASSWORD if "distributor" in key else password))
+
+    fixed = re.sub(r'<profileitem[^>]*key="([^"]*)"[^>]*password="([^"]*)"[^>]*/>', repl, s)
+    if fixed != s:
+        open(profiles, "w", encoding="utf-8").write(fixed)
+        say("Ghi mật khẩu chứng chỉ vào profiles.xml (máy không có keyring)")
 
 
 # ---- check -------------------------------------------------------------------------------------------------------
