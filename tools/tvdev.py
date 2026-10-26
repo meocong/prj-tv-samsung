@@ -331,6 +331,7 @@ def debug(args):
             break
     if not m:
         die("không mở được chế độ debug: " + out.strip())
+    run([sdb_bin(), "-s", target, "forward", "--remove", "tcp:9333"], check=False, capture=True)
     run([sdb_bin(), "-s", target, "forward", "tcp:9333", "tcp:" + m.group(1)], check=False, capture=True)
     print("App đang ở chế độ debug. Dùng: node tools/inspect.js --port 9333 --eval \"NhaMinhDebug.wall()\"")
 

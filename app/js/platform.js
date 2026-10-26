@@ -96,7 +96,7 @@
   // getAppsInfo also lists ~100 parts of the system (services, previews, companion pieces): only apps a person
   // opens from the Apps panel pass. Store apps have a 10-character package id ("9Ur5IzDKqV.TizenYouTube").
   var STORE_ID = /^[A-Za-z0-9]{10}\.[A-Za-z0-9_.-]+$/;
-  var NOT_AN_APP = /service|widget|preview|daemon|agent|helper|plugin|wgt-installer|\.bg$|_bg$/i;
+  var NOT_AN_APP = /service|widget|preview|daemon|agent|helper|plugin|wgt-installer|devicecare|\.bg$|_bg$/i;
 
   /** Pure (tests/apps.test.js): the TV's list → the apps to show, in catalog order, then by name. */
   function mergeApps(list, catalog) {

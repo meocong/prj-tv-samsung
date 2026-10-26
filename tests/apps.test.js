@@ -21,6 +21,7 @@ test('catalog apps keep their artwork, other store apps come with the TV\'s own 
     { id: 'NhaMinh000.WatchService', name: 'NhaWatch', show: false },
     { id: 'org.tizen.volume-panel', name: 'volume', show: false },          // system parts
     { id: 'Zx9Yw8Vu7T.PreviewService', name: 'Preview', show: true },
+    { id: 'qtMHjALHus.TVDeviceCare', name: 'TVDeviceCare', show: true },   // seen on a 2020 TV
     { id: 'Qq1Ww2Ee3R.HiddenGame', name: 'Hidden', show: false }
   ];
   const apps = Platform.mergeApps(tv, catalog);

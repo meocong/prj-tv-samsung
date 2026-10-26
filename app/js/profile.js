@@ -27,7 +27,11 @@
     C.locations = [p.location].concat((C.locations || []).filter(function (l) { return l.name !== p.location.name; }));
   }
   if (p.birthdays) C.birthdays = p.birthdays;
-  if (p.photos.length) C.familyPhotos = p.photos.map(function (id) { return 'idb:' + id; });
+  if (p.photos.length) {
+    // Phone photos replace the sample pictures, and join photos the house already had (local/config.local.js).
+    var own = (C.familyPhotos || []).filter(function (u) { return u.indexOf('img/sample/') === -1; });
+    C.familyPhotos = own.concat(p.photos.map(function (id) { return 'idb:' + id; }));
+  }
 
   // ---- photos in IndexedDB ---------------------------------------------------------------------
 
