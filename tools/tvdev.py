@@ -71,6 +71,41 @@ def run(cmd, check=True, capture=False, **kw):
     return r
 
 
+class Result:
+    def __init__(self, code, out):
+        self.returncode, self.stdout, self.stderr = code, out, ""
+
+
+def run_answering(cmd, answers):
+    """Run cmd on a pseudo-terminal (POSIX), typing each answer when its prompt shows up."""
+    import pty
+    import select
+    master, slave = pty.openpty()
+    proc = subprocess.Popen(cmd, stdin=slave, stdout=slave, stderr=slave, close_fds=True)
+    os.close(slave)
+    seen, out, pending = b"", b"", list(answers)
+    while True:
+        ready, _, _ = select.select([master], [], [], 0.5)
+        if ready:
+            try:
+                chunk = os.read(master, 4096)
+            except OSError:
+                break
+            if not chunk:
+                break
+            out += chunk
+            seen += chunk
+            while pending and pending[0][0] in seen:
+                os.write(master, pending[0][1])
+                seen = seen.split(pending[0][0], 1)[1]
+                pending.pop(0)
+        elif proc.poll() is not None:
+            break
+    proc.wait()
+    os.close(master)
+    return Result(proc.returncode, out.decode("utf-8", "replace"))
+
+
 def need_tizen():
     if not os.path.exists(tizen_bin()):
         die("chưa có Tizen Studio CLI ở %s. Chạy trước: python3 tools/tvdev.py setup" % tizen_home())
@@ -231,7 +266,14 @@ def build(public):
                 s = re.sub(pat, "<%s>%s</%s>" % (tag, name, tag), s, count=1)
                 open(p, "w", encoding="utf-8").write(s)
     out = os.path.join(tmp, "out")
-    r = run([tizen_bin(), "package", "-t", "wgt", "-s", PROFILE, "-o", out, "--", src], check=False, capture=True)
+    cmd = [tizen_bin(), "package", "-t", "wgt", "-s", PROFILE, "-o", out, "--", src]
+    pass_file = os.path.join(tizen_data(), PROFILE + ".pass")
+    if platform.system() == "Linux" and os.path.exists(pass_file):
+        # Without a keyring the CLI asks for the password on a terminal (and whether to save it).
+        password = open(pass_file).read().strip()
+        r = run_answering(cmd, [(b"Author password:", (password + "\r").encode()), (b"(N) ?", b"N\r")])
+    else:
+        r = run(cmd, check=False, capture=True)
     wgts = [f for f in os.listdir(out)] if os.path.isdir(out) else []
     if r.returncode != 0 or not wgts:
         print((r.stdout or "") + (r.stderr or ""))
