@@ -7,3 +7,4 @@ tools/.tv-token
 # Dữ liệu riêng của từng nhà (tên, vị trí, ảnh gia đình): ghép vào app/ lúc deploy, không bao giờ lên Git.
 local/
 tools/.tv-name
+__pycache__/
