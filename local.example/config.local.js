@@ -1,6 +1,6 @@
 // Ví dụ cấu hình riêng. Chép thư mục này thành local/ (đã có trong .gitignore) rồi sửa:
 //   cp -R local.example local
-// tools/deploy.sh và tools/preview.py ghép local/ đè lên app/: file này thay app/config.local.js, local/img/avatar.jpg
+// tools/tvdev.py deploy và tools/preview.py ghép local/ đè lên app/: file này thay app/config.local.js, local/img/avatar.jpg
 // thay ảnh avatar góc phải, local/img/family/*.jpg là ảnh gia đình (tạo bằng tools/photos.py).
 Object.assign(window.CONFIG, {
   familyName: 'Nhà An ❤ Bình & Mít',   // ❤ hiện thành trái tim

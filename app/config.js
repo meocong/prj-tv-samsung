@@ -1,6 +1,6 @@
 // Cấu hình mặc định. Phần lớn tùy chọn chỉnh được ngay trên TV (nút Cài đặt, hoặc phím xanh dương).
 // Tên nhà, vị trí, ảnh gia đình của riêng bạn: đặt trong local/config.local.js (không lên Git, xem README).
-// Sửa xong chạy tools/deploy.sh.
+// Sửa xong chạy tools/tvdev.py deploy.
 window.CONFIG = {
   familyName: 'Nhà Mình ❤ Gia Đình',   // ❤ hiện thành trái tim vẽ bằng SVG
 
@@ -47,6 +47,9 @@ window.CONFIG = {
     { name: 'Khoai Lang Thang', id: 'UCeKzImp-LS8SKmK_d0GN7jg' }
   ],
 
+  // Repo GitHub để báo khi có bản mới (Cài đặt → Thông tin). Bản fork thì đổi thành repo của bạn.
+  repo: 'meocong/prj-tv-samsung',
+
   // Sinh nhật người nhà: { name: 'Bà', day: 10, month: 11, lunar: false } — lunar: true nếu tính theo âm lịch.
   birthdays: [],
 
@@ -57,6 +60,7 @@ window.CONFIG = {
     nightDim: true,            // màn hình chờ tối hơn từ 23:00 đến 6:00
     columns: 4,                // số ô mỗi hàng: 4 | 5 | 6
     showToday: true,           // khối "Hôm nay": ngày này năm xưa, câu nói hay, tin mới
+    showMarkets: true,         // giá vàng (PNJ) và tỷ giá USD (Vietcombank) trong khối "Hôm nay"
     showStats: false,          // CPU và bộ nhớ trống dưới đồng hồ
     returnHome: true,          // thoát app mở từ đây (YouTube, Netflix…) thì quay về màn hình này
     closeHidden: 5,            // phút: app chạy ẩn lâu hơn thì dịch vụ nền đóng để giải phóng RAM; 0 = không

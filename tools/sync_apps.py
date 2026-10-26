@@ -27,7 +27,10 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 TV = os.environ.get("TV_HOST", "192.168.1.7") + ":26101"
-SDB = os.path.expanduser("~/tizen-studio/tools/sdb")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from tvdev import sdb_bin  # noqa: E402  (same folder)
+
+SDB = sdb_bin()
 ICON_DIR = os.path.join(ROOT, "app", "icons")
 CACHE = os.path.join(HERE, ".cache", "icons")
 BANNER = (720, 405)
@@ -252,7 +255,7 @@ def glyph_png(svg, png):
 def main():
     apps = tv_apps()
     if not apps:
-        sys.exit("Không đọc được danh sách app — TV có đang bật và kết nối sdb không? (tools/deploy.sh kiểm tra kết nối)")
+        sys.exit("Không đọc được danh sách app — TV có đang bật và kết nối sdb không? (chạy thử: python3 tools/tvdev.py deploy --tv <IP TV>)")
     if "--list" in sys.argv:
         for a in sorted(apps, key=lambda a: -int(a.get("use_count") or 0)):
             print("%5s  %-40s %-16s %s" % (a.get("use_count"), a.get("app_title"), a.get("app_id"), a.get("app_tizen_id")))

@@ -246,7 +246,8 @@
           if (!currentPhoto) document.body.classList.add('aurora');
           schedule();
         };
-        img.src = photo.url;
+        if (/^idb:/.test(photo.url) && root.Profile) Profile.photoUrl(photo.url, function (u) { img.src = u || ''; });
+        else img.src = photo.url;
       })();
     }
 

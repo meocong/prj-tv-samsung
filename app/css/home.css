@@ -780,3 +780,16 @@ b.x, .dRow b.x { color: #ff9b9b; }
 /* Blocks that fade when the YouTube row opens or the grid scrolls keep their own layer: without it the TV
    re-painted them on every fade (84–161 ms of frozen keys at the YouTube tile; 54 ms once, with). */
 #today, #wxWidget, #hero, #heroSub, #wallDim, header { will-change: opacity, transform; }
+
+/* ---- Cài đặt bằng điện thoại / máy tính ---------------------------------------------------------- */
+
+#setupPanel { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; background: rgba(8, 8, 10, 0.95); z-index: 20; }
+.spHead { position: absolute; left: 160px; top: 110px; font-size: 52px; font-weight: 300; }
+.spBody { position: absolute; left: 160px; top: 250px; display: flex; align-items: flex-start; }
+#spQr { width: 360px; height: 360px; border-radius: 24px; background: #fff; flex: none; }
+.spText { margin-left: 72px; width: 1100px; }
+.spText p { font-size: 28px; font-weight: 300; color: rgba(255, 255, 255, 0.75); margin: 0 0 14px; }
+.spUrl { font-size: 54px; font-weight: 500; color: #fff; margin: 0 0 30px; }
+.spPin { font-size: 96px; font-weight: 500; letter-spacing: 0.08em; color: #ff9a4d; margin: 0 0 30px; }
+.spText p.spGot { font-size: 24px; color: rgba(255, 255, 255, 0.55); }
+.spHint { position: absolute; left: 160px; bottom: 90px; font-size: 22px; color: rgba(255, 255, 255, 0.45); }

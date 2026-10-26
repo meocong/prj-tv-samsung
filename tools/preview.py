@@ -17,7 +17,8 @@ USE_LOCAL = "--public" not in sys.argv
 ALLOWED = ("www.bing.com", "en.wikipedia.org", "vi.wikipedia.org", "api.open-meteo.com", "air-quality-api.open-meteo.com",
            "api.wikimedia.org", "translate.googleapis.com", "www.youtube.com", "www.googleapis.com",
            "vnexpress.net", "thanhnien.vn", "dantri.com.vn", "tuoitre.vn",
-           "zenquotes.io", "vi.wikiquote.org")
+           "zenquotes.io", "vi.wikiquote.org",
+           "edge-api.pnj.io", "portal.vietcombank.com.vn", "open.er-api.com", "api.github.com")
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -25,7 +26,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().__init__(*args, directory=ROOT, **kwargs)
 
     def translate_path(self, path):
-        """A file in local/ wins over the same path in app/ (as tools/deploy.sh does)."""
+        """A file in local/ wins over the same path in app/ (as tools/tvdev.py deploy does)."""
         p = super().translate_path(path)
         if USE_LOCAL:
             alt = os.path.join(LOCAL, os.path.relpath(p, os.path.abspath(ROOT)))
@@ -58,7 +59,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.send_error(502, repr(e).encode("ascii", "replace").decode())
 
     def log_message(self, fmt, *args):
-        if "/proxy?" in (args[0] if args else ""):
+        if args and isinstance(args[0], str) and "/proxy?" in args[0]:
             sys.stderr.write("proxy %s\n" % (args[0],))
 
 

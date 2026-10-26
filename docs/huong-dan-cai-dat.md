@@ -1,115 +1,134 @@
-# Hướng dẫn cài đặt từ đầu
+# Hướng dẫn cài đặt
 
-Khoảng 15–20 phút. Cần:
+Khoảng 15 phút, không cần biết lập trình. Bạn cài app vào TV bằng **Apps2Samsung**, một công cụ miễn phí, mã nguồn mở,
+có giao diện tiếng Việt, chạy trên **Windows, macOS, Linux** và **điện thoại Android**.
 
-- TV Samsung chạy Tizen, đời 2017 trở đi (đã thử kỹ trên UA50TU8500, đời 2020, Tizen 5.5).
-- Một máy Mac (Intel hoặc Apple Silicon), còn trống khoảng 1 GB.
-- **TV và Mac cùng một mạng**, tức là cùng router. Nhà có router phụ (Xiaomi, TP-Link…) thì để nó ở chế độ AP/Access
-  Point, hoặc cắm cả hai vào cùng một router. Router phụ chạy chế độ router thường sẽ chặn Mac nói chuyện với TV.
+**Cần có:**
+- TV Samsung chạy Tizen, đời 2017 trở đi. Đã kiểm tra kỹ trên đời 2020 (UA50TU8500, Tizen 5.5).
+- Một máy tính (Windows, macOS hoặc Linux) **hoặc** một điện thoại Android, **cùng Wi-Fi với TV**.
+- TV đời 2023 trở đi: một tài khoản Samsung (Apps2Samsung dùng nó để tạo chứng chỉ ký app, chỉ lần đầu).
 
-> Máy Windows hay Linux: các script trong `tools/` viết cho macOS. Cài
-> [Tizen Studio CLI](https://developer.tizen.org/development/tizen-studio/download) cho máy của bạn rồi làm theo các
-> lệnh `tizen` và `sdb` trong `tools/setup-mac.sh` và `tools/deploy.sh`.
+> Nhà có router phụ (Xiaomi, TP-Link…) thì để router phụ ở chế độ **AP / Access Point**, hoặc cho TV và máy dùng để cài
+> vào cùng một router. Hai thiết bị ở hai mạng khác nhau thì không thấy nhau.
 
 ## 1. Lấy địa chỉ IP
 
-**IP của máy Mac**: *Cài đặt hệ thống → Wi-Fi →* bấm **Chi tiết…** bên cạnh mạng đang dùng *→ TCP/IP*. Hoặc gõ trong
-Terminal:
+Cần IP của **máy dùng để cài** (máy tính hoặc điện thoại) và IP của **TV**.
 
-```bash
-ipconfig getifaddr en0      # Wi-Fi; nếu Mac cắm dây mạng thì thử en1
-```
+| Thiết bị | Cách xem IP |
+|---|---|
+| Windows | *Cài đặt → Mạng và Internet →* mạng đang dùng *→ Thuộc tính → Địa chỉ IPv4*. Hoặc gõ `ipconfig` trong Command Prompt. |
+| macOS | *Cài đặt hệ thống → Wi-Fi →* **Chi tiết…** bên cạnh mạng đang dùng *→ TCP/IP*. |
+| Linux | `ip addr` (dòng `inet 192.168…` của card mạng đang dùng). |
+| Android | *Cài đặt → Wi-Fi →* bấm vào mạng đang dùng *→ Địa chỉ IP* (có máy ở mục *Nâng cao*). |
+| TV | *Cài đặt → Tổng quát → Mạng → Trạng thái mạng → Cài đặt IP*. |
 
-**IP của TV**: *Cài đặt → Tổng quát → Mạng → Trạng thái mạng → Cài đặt IP*. Ghi lại dạng `192.168.1.x`.
-
-Nên đặt **IP cố định** (DHCP reservation) cho cả TV và Mac trong trang quản trị router. Nếu không, khi IP đổi phải làm
-lại bước 2.
+Nên đặt **IP cố định** (DHCP reservation) cho TV và máy dùng để cài trong trang quản trị router, để lần sau không phải
+làm lại bước 2.
 
 ## 2. Bật Developer Mode trên TV
 
-1. Bấm nút **Home** trên remote → chọn **Ứng dụng** (Apps).
-2. Ở màn Ứng dụng, bấm lần lượt **1 2 3 4 5**.
-   - Remote thông minh (One Remote) không có phím số: bấm nút **123** (có remote phải giữ nút ⏯ hoặc nút tròn nhiều
-     màu) để hiện bàn phím số trên màn hình, rồi chọn 1, 2, 3, 4, 5.
-   - Hoặc dùng bàn phím số trong app SmartThings trên điện thoại.
-3. Hộp **Developer Mode** hiện ra: chuyển sang **On**, ô **Host PC IP** nhập **IP của máy Mac** (bước 1), bấm **OK**.
-4. **Khởi động lại TV hẳn**: giữ nút nguồn trên remote khoảng 5 giây, đến khi TV tắt rồi hiện logo Samsung. Bấm tắt
-   bình thường chỉ là cho TV ngủ, Developer Mode chưa có tác dụng.
-5. Kiểm tra: mở lại **Ứng dụng**, thấy chữ **Developer Mode** ở góc trên màn hình là được.
+1. Bấm **Home** → chọn **Ứng dụng** (Apps).
+2. Ở màn Ứng dụng, bấm lần lượt **1 2 3 4 5**. Remote không có phím số: bấm nút **123** để hiện bàn phím số trên màn
+   hình (hoặc dùng bàn phím số trong app SmartThings trên điện thoại).
+3. Hộp **Developer Mode** hiện ra: chuyển sang **On**, ô **Host PC IP** nhập IP của **máy dùng để cài** (bước 1), bấm
+   **OK**.
+4. **Khởi động lại TV hẳn**: rút điện TV 10–15 giây rồi cắm lại (hoặc giữ nút nguồn trên remote khoảng 5 giây đến khi
+   hiện logo Samsung). Bấm tắt bình thường chỉ là cho TV ngủ, Developer Mode chưa có tác dụng.
+5. Kiểm tra: mở lại **Ứng dụng**, thấy chữ **Developer Mode** ở góc trên là được.
 
-Developer Mode có thể tự tắt sau khi TV cập nhật phần mềm. Khi đó làm lại bước này.
+Một số TV đảo ngược thứ tự số khi nhập IP. Nếu Apps2Samsung báo IP không khớp, mở lại hộp Developer Mode xem IP đã
+lưu có đúng không.
 
-## 3. Chuẩn bị máy Mac (một lần)
+## 3. Tải Apps2Samsung
 
-```bash
-git clone https://github.com/meocong/prj-tv-samsung.git
-cd prj-tv-samsung
-tools/setup-mac.sh
-```
+Vào [github.com/Apps2Samsung/Apps2Samsung/releases](https://github.com/Apps2Samsung/Apps2Samsung/releases), mục
+**Assets** của bản mới nhất:
 
-`setup-mac.sh` làm những việc sau, chạy lại nhiều lần cũng không sao:
+| Máy | File tải |
+|---|---|
+| Windows | `Apps2Samsung-…-win-x64.msi` (hoặc gõ `winget install Apps2Samsung.Apps2Samsung`) |
+| macOS chip Apple (M1, M2…) | `Apps2Samsung-…-macos-arm64.dmg` |
+| macOS chip Intel | `Apps2Samsung-…-macos-x64.dmg` |
+| Linux | `Apps2Samsung-…-linux-x64.AppImage` (cho quyền chạy: `chmod +x`), hoặc `.deb` / `.rpm` |
+| Android | `Apps2Samsung-…-android.apk` (cho phép cài app từ nguồn này khi được hỏi) |
 
-- Cài Rosetta 2 trên Mac Apple Silicon (công cụ của Tizen là bản x86_64).
-- Tải Tizen Studio 6.1 CLI (khoảng 280 MB) vào `~/tizen-studio`.
-- Tạo chứng chỉ ký app (author certificate) và security profile tên `nhaminh`. Mật khẩu ngẫu nhiên nằm ở
-  `~/tizen-studio-data/nhaminh.pass`, không bao giờ vào repo. Không cần tài khoản Samsung.
-- Tạo môi trường Python `tools/.venv` cho các công cụ phụ (`tv.py`, `photos.py`, `sync_apps.py`).
+- **Windows** có thể hiện "Windows đã bảo vệ máy tính của bạn": bấm **Thông tin thêm → Vẫn chạy**.
+- **macOS** có thể báo không mở được vì không xác định được nhà phát triển: chuột phải vào app → **Mở** → **Mở**.
 
-## 4. Kết nối thử
+## 4. Tải file app
 
-```bash
-~/tizen-studio/tools/sdb connect <IP TV>:26101
-~/tizen-studio/tools/sdb devices
-```
+Vào [github.com/meocong/prj-tv-samsung/releases/latest](https://github.com/meocong/prj-tv-samsung/releases/latest), tải
+file **`NhaMinh-<phiên bản>.wgt`** ở mục Assets về máy (điện thoại: lưu vào thư mục Tải xuống).
 
-Thấy một dòng có tên model TV (ví dụ `UA50TU8500KXXV`) với trạng thái `device` là Mac đã nói chuyện được với TV.
+## 5. Cài lên TV
 
-## 5. Cá nhân hóa (tùy chọn)
+1. Mở Apps2Samsung. Bấm **Quét để tìm TV**, hoặc nhập IP của TV.
+2. Chọn TV của bạn.
+3. Ở **Chọn một ứng dụng**, chọn **Custom WGT / TPK**, bấm **Duyệt…** và chọn file `NhaMinh-….wgt` vừa tải.
+4. Bấm **Cài ngay**.
+5. TV đời 2023 trở đi: lần đầu, Apps2Samsung mở trình duyệt để đăng nhập tài khoản Samsung và tạo chứng chỉ. Đăng nhập
+   xong, việc cài tự chạy tiếp.
 
-Tên nhà, vị trí thời tiết, ảnh gia đình, avatar. Tất cả nằm trong thư mục `local/`, không lên Git:
+Thấy báo đã cài là xong. Trên TV: **Home → Ứng dụng → Nhà Mình**. Đưa ô này lên đầu thanh Home: chọn ô → bấm xuống →
+**Di chuyển**.
 
-```bash
-cp -R local.example local
-open -e local/config.local.js                                         # sửa tên nhà, vị trí
-tools/.venv/bin/python tools/photos.py ~/Pictures/a.jpg ~/Pictures/b.jpg   # ảnh gia đình
-cp ~/Pictures/avatar.jpg local/img/avatar.jpg                          # ảnh tròn góc phải
-```
+## 6. Cá nhân hóa bằng điện thoại hoặc máy tính
 
-Chi tiết: [README → Cá nhân hóa](../README.md#cá-nhân-hóa).
+Trên TV, mở màn hình chính → **Cài đặt** (bánh răng, hoặc phím xanh dương) → **Cài đặt bằng điện thoại / máy tính**. TV
+hiện mã QR, một địa chỉ dạng `http://192.168.x.x:8701/` và mã PIN 6 số.
 
-## 6. Cài lên TV
+Trên điện thoại hoặc laptop **cùng Wi-Fi**: quét mã QR (hoặc gõ địa chỉ vào trình duyệt), nhập mã PIN, rồi đặt:
+- **Tên nhà** (có nút ❤ để chèn trái tim), hiện trong lời chào và trên màn hình chờ.
+- **Thành phố** cho thời tiết và chất lượng không khí: gõ tên rồi chọn trong danh sách.
+- **Sinh nhật** người nhà (dương hoặc âm lịch), hiện ở hàng "Sắp tới" và trong Lịch.
+- **Ảnh gia đình**: chọn nhiều ảnh một lúc. Ảnh được thu nhỏ ngay trên máy rồi mới gửi; ảnh dọc được đặt khung trên nền
+  mờ. Ảnh hiện trên màn hình chờ và trong hình nền.
+- **Ảnh avatar** ở góc phải màn hình.
 
-```bash
-TV_HOST=<IP TV> tools/deploy.sh
-```
-
-Lệnh này kiểm tra code, đóng gói, ký, cài và mở app. Thấy `Đã cài … lên TV` và màn hình chính hiện trên TV là xong. Mỗi
-lần sửa gì, chạy lại đúng lệnh này.
-
-Sau đó:
-
-- **Đưa app lên đầu thanh Home**: Home → chọn ô app (mặc định **Nhà Mình**) → bấm xuống → **Di chuyển**.
-- **Đồng bộ danh sách app** của TV bạn (app đã cài, icon, số lần mở). Lần đầu TV hỏi cho phép điều khiển, chọn
-  **Cho phép**:
-
-  ```bash
-  TV_HOST=<IP TV> tools/.venv/bin/python tools/sync_apps.py && TV_HOST=<IP TV> tools/deploy.sh
-  ```
+TV nhận và tự cập nhật sau vài giây. Mọi thứ lưu trên TV.
 
 ## 7. Cài đặt TV
 
-Tắt quảng cáo và theo dõi, đặt DNS chặn quảng cáo, chỉnh hình ảnh, cho TV tự tắt khi quên, và cách để bật TV là vào thẳng
-màn hình chính: [docs/cai-dat-tv.md](cai-dat-tv.md).
+Để bật TV là vào màn hình chính, bớt quảng cáo và theo dõi, TV nhẹ hơn: làm theo [cai-dat-tv.md](cai-dat-tv.md).
+
+## Cập nhật bản mới
+
+Khi có bản mới, màn hình chính báo ở **Cài đặt → Thông tin**. Tải file `.wgt` mới (bước 4) rồi cài **bằng đúng cách đã
+cài lần trước** (bước 5): cài đè giữ nguyên cài đặt và ảnh.
+
+Đổi cách cài (ví dụ trước cài bằng công cụ dev, giờ dùng Apps2Samsung) thì TV báo chứng chỉ không khớp ("author
+certificate not match"). Khi đó gỡ app trên TV trước (Ứng dụng → ⚙ → Nhà Mình → Xóa) rồi cài lại; cài đặt và ảnh trên
+TV mất theo, đặt lại bằng điện thoại ở bước 6.
 
 ## Gặp lỗi
 
 | Hiện tượng | Cách xử lý |
 |---|---|
-| `Không thấy TV ở …` hoặc `sdb devices` trống | Developer Mode đã bật và TV đã khởi động lại hẳn chưa? Host PC IP có đúng IP **hiện tại** của Mac không? Thử `ping <IP TV>`. Router phụ phải ở chế độ AP. |
-| `sdb` báo `protocol fault` hay `target not found` | `~/tizen-studio/tools/sdb kill-server`, rồi `sdb connect <IP TV>:26101` lại. |
-| Cài báo lỗi chữ ký hoặc chứng chỉ (signature, certificate) | Một số TV đời mới chỉ nhận chứng chỉ Samsung: cài [Tizen Studio](https://developer.tizen.org/development/tizen-studio/download) bản có giao diện, mở **Certificate Manager**, tạo chứng chỉ **Samsung** (cần tài khoản Samsung, chọn TV đang kết nối), rồi chạy `TIZEN_PROFILE=<tên profile mới> tools/deploy.sh`. |
+| Apps2Samsung không thấy TV | TV đang bật? TV và máy cùng Wi-Fi? Router phụ có ở chế độ AP không? Thử nhập IP của TV thay vì quét. |
+| Báo Developer Mode tắt, hoặc IP không khớp | Mở lại hộp Developer Mode (bước 2): Developer Mode **On** và Host PC IP đúng là IP **hiện tại** của máy dùng để cài. Sửa xong thì rút điện TV 10–15 giây. |
+| Báo "author certificate not match" | App đã được cài bằng cách khác: gỡ app trên TV rồi cài lại (xem *Cập nhật bản mới*). |
+| TV 2023+ báo lỗi chứng chỉ | Đăng nhập tài khoản Samsung khi Apps2Samsung mở trình duyệt; tài khoản cần có địa chỉ email. |
 | Cài xong không thấy app | Home → **Ứng dụng** → kéo xuống cuối danh sách. |
-| Mac đổi IP | Vào lại Developer Mode trên TV (bước 2) và sửa Host PC IP. |
-| Muốn xem lỗi trong app | Xem mục *Phát triển* trong [README](../README.md#phát-triển): debug bằng `sdb` và `tools/inspect.js`. |
+| Điện thoại không mở được trang cài đặt | Điện thoại phải cùng Wi-Fi với TV (không dùng 4G). Mở màn hình chính trên TV một lần rồi tải lại trang. |
+| Developer Mode tự tắt | Thường sau khi TV cập nhật phần mềm: bật lại theo bước 2. |
 
-Gỡ bỏ toàn bộ: cuối [docs/cai-dat-tv.md](cai-dat-tv.md#gỡ-bỏ-toàn-bộ).
+---
+
+## Cho người muốn sửa code
+
+Cần **Python 3.9+** và **Node.js**. Trên Windows thay `python3` bằng `py`.
+
+```bash
+git clone https://github.com/meocong/prj-tv-samsung.git && cd prj-tv-samsung
+python3 tools/tvdev.py setup                  # Tizen Studio CLI, chứng chỉ ký app, môi trường Python (một lần)
+python3 tools/tvdev.py deploy --tv <IP TV>    # kiểm tra, đóng gói, cài lên TV, mở app
+```
+
+`setup` tải bộ cài Tizen Studio 6.1 CLI đúng hệ điều hành (khoảng 280 MB, vào `C:\tizen-studio` hoặc `~/tizen-studio`);
+trên Mac chip Apple, nó cài Rosetta 2 nếu chưa có. Chứng chỉ ký app là chứng chỉ Tizen thường, dùng được cho TV đời
+2017–2022 ở Developer Mode; TV đời 2023 trở đi cần chứng chỉ Samsung (tạo bằng Certificate Manager của Tizen Studio bản
+có giao diện, rồi chạy với `TIZEN_PROFILE=<tên profile>`), hoặc cài file `.wgt` bằng Apps2Samsung.
+
+Host PC IP trên TV phải là IP của máy chạy `tvdev.py`. Các lệnh khác, cách xem thử trên trình duyệt và cách debug: xem
+[README → Phát triển](../README.md#phát-triển).

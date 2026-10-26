@@ -75,22 +75,48 @@
   }
 
   /**
-   * The apps in the TV's Apps panel: [{id, title, icon, uses}]. getAppsInfo also lists ~100 hidden system
-   * and companion components (recommendation tiles, previews…), so the list comes from tools/sync_apps.py
-   * (window.TV_APPS, read from the Smart Hub). On the TV it is checked against what is still installed;
-   * run tools/sync_apps.py again after installing or removing apps.
+   * The apps on this TV: [{id, storeId, title, desc, icon}].
+   *
+   * window.TV_APPS (app/js/apps.js, made by tools/sync_apps.py) is a catalog of well-known apps with good artwork,
+   * a store id (the TV's REST API wants it for some apps) and a short description. Whatever the TV itself reports
+   * as installed and visible is the truth: catalog apps come with their artwork, any other app with the TV's own
+   * name and icon. So the home screen fits every TV, not only the one the catalog was made on.
    */
   function listApps(cb) {
-    var synced = (root.TV_APPS || []).map(function (a) { return Object.assign({}, a); });
-    if (!isTV) return cb(synced);
+    var catalog = (root.TV_APPS || []).map(function (a) { return Object.assign({}, a); });
+    if (!isTV) return cb(catalog);
     try {
       tizen.application.getAppsInfo(function (list) {
-        var installed = {};
-        list.forEach(function (a) { installed[a.id] = true; });
-        var out = synced.filter(function (a) { return installed[a.id]; });
-        cb(out.length ? out : synced);
-      }, function () { cb(synced); });
-    } catch (e) { cb(synced); }
+        var apps = mergeApps(list, catalog);
+        cb(apps.length ? apps : catalog);
+      }, function () { cb(catalog); });
+    } catch (e) { cb(catalog); }
+  }
+
+  // getAppsInfo also lists ~100 parts of the system (services, previews, companion pieces): only apps a person
+  // opens from the Apps panel pass. Store apps have a 10-character package id ("9Ur5IzDKqV.TizenYouTube").
+  var STORE_ID = /^[A-Za-z0-9]{10}\.[A-Za-z0-9_.-]+$/;
+  var NOT_AN_APP = /service|widget|preview|daemon|agent|helper|plugin|wgt-installer|\.bg$|_bg$/i;
+
+  /** Pure (tests/apps.test.js): the TV's list → the apps to show, in catalog order, then by name. */
+  function mergeApps(list, catalog) {
+    var byId = {}, out = [], seen = {};
+    catalog.forEach(function (a) { byId[a.id] = a; });
+    (list || []).forEach(function (info) {
+      var id = info && info.id;
+      if (!id || seen[id] || id.indexOf(OWN_PACKAGE) === 0) return;
+      var known = byId[id];
+      if (!known && (info.show === false || !STORE_ID.test(id) || NOT_AN_APP.test(id))) return;
+      seen[id] = true;
+      out.push(known ? known : { id: id, storeId: '', title: info.name || id, desc: '', icon: iconUrl(info.iconPath), rank: 9999 });
+    });
+    var order = {};
+    catalog.forEach(function (a, i) { order[a.id] = i; });
+    out.sort(function (a, b) {
+      var oa = order[a.id] === undefined ? 1e6 : order[a.id], ob = order[b.id] === undefined ? 1e6 : order[b.id];
+      return oa - ob || String(a.title).localeCompare(String(b.title));
+    });
+    return out;
   }
 
   function iconUrl(path) {
@@ -99,7 +125,7 @@
     return 'file://' + path.split('/').map(encodeURIComponent).join('/');
   }
 
-  var WATCH_SERVICE = 'NhaMinh000.WatchService';
+  var WATCH_SERVICE = 'NhaMinh000.WatchService', OWN_PACKAGE = 'NhaMinh000.';
 
   /**
    * Start the background service, optionally telling it which app is about to open ([storeId, tizenId]).
@@ -332,6 +358,7 @@
     kv: kv,
     ownAppId: ownAppId,
     listApps: listApps,
+    mergeApps: mergeApps,
     launch: launch,
     startService: function () { if (isTV) tellService(null); },
     exit: exit,

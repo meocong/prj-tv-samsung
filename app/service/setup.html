@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cài đặt màn hình chính TV</title>
+<style>
+  :root { --bg: #0d0f14; --card: #171a22; --line: #262b36; --text: #f2f3f5; --dim: #9aa1ad; --accent: #ff8a3d; --bad: #ff6b6b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 640px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 24px; margin: 8px 0 4px; }
+  h2 { font-size: 17px; margin: 0 0 10px; }
+  p, small { color: var(--dim); }
+  small { display: block; margin-top: 6px; font-size: 13px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin: 16px 0; }
+  input[type=text], input[type=number], input:not([type]) { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line);
+    background: #0f1218; color: var(--text); font-size: 16px; }
+  input[type=file] { color: var(--dim); }
+  button { padding: 11px 16px; border-radius: 10px; border: 1px solid var(--line); background: #222734; color: var(--text); font-size: 15px; cursor: pointer; }
+  button.primary { width: 100%; background: var(--accent); border-color: var(--accent); color: #1b0e04; font-weight: 600; font-size: 16px; padding: 14px; }
+  button.danger { color: var(--bad); }
+  .row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+  .row input { flex: 1; }
+  ul { list-style: none; padding: 0; margin: 8px 0 0; }
+  li { padding: 10px 12px; border-radius: 10px; cursor: pointer; }
+  li:hover, li:focus { background: #222734; }
+  .bday { display: grid; grid-template-columns: 1fr 64px 64px auto auto; gap: 6px; align-items: center; margin-bottom: 8px; }
+  .bday label { color: var(--dim); font-size: 13px; white-space: nowrap; }
+  .now { color: var(--text); }
+  .err { color: var(--bad); }
+  .ok { color: #7bd88f; }
+  #pin { font-size: 28px; letter-spacing: 8px; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Màn hình chính TV</h1>
+  <p id="who">Cài đặt tên nhà, thành phố, ảnh gia đình và sinh nhật cho TV.</p>
+
+  <section id="pinBox">
+    <h2>Mã PIN</h2>
+    <p>Mã 6 số hiện trên TV: <b>Cài đặt → Cài đặt bằng điện thoại / máy tính</b>.</p>
+    <input id="pin" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
+    <div class="row"><button class="primary" id="go">Tiếp tục</button></div>
+    <p class="err" id="pinErr"></p>
+  </section>
+
+  <div id="app" hidden>
+    <section>
+      <h2>Tên nhà</h2>
+      <div class="row"><input id="name" placeholder="Nhà An ❤ Bình &amp; Mít"><button id="heart" title="Thêm trái tim">❤</button></div>
+      <small>Hiện trong lời chào ("Chúc buổi tối, …") và trên màn hình chờ. ❤ hiện thành trái tim đỏ.</small>
+    </section>
+
+    <section>
+      <h2>Thành phố (thời tiết, không khí)</h2>
+      <input id="city" placeholder="Gõ tên: Cầu Giấy, Đà Lạt, Huế, Biên Hòa…">
+      <ul id="cities"></ul>
+      <small id="cityNow"></small>
+    </section>
+
+    <section>
+      <h2>Sinh nhật người nhà</h2>
+      <div id="bdays"></div>
+      <button id="addBday">+ Thêm sinh nhật</button>
+      <small>Hiện ở hàng "Sắp tới" và trong Lịch. Tích "âm lịch" nếu là ngày âm.</small>
+    </section>
+
+    <button class="primary" id="save">Lưu tên nhà, thành phố, sinh nhật</button>
+    <p id="saveMsg"></p>
+
+    <section>
+      <h2>Ảnh gia đình</h2>
+      <p>Chọn một hay nhiều ảnh. Ảnh được thu nhỏ ngay trên máy này (1920×1080) rồi mới gửi lên TV; ảnh dọc được đặt khung
+        trên nền mờ. Ảnh hiện trên màn hình chờ và hình nền "Ảnh gia đình".</p>
+      <input type="file" id="photos" accept="image/*" multiple>
+      <p id="photoMsg"></p>
+      <small id="photoNow"></small>
+      <div class="row"><button class="danger" id="clear">Xóa hết ảnh gia đình trên TV</button></div>
+    </section>
+
+    <section>
+      <h2>Ảnh avatar (góc phải màn hình)</h2>
+      <input type="file" id="avatar" accept="image/*">
+      <p id="avatarMsg"></p>
+    </section>
+  </div>
+</main>
+
+<script>
+(function () {
+  var W = 1920, H = 1080;
+  var $ = function (id) { return document.getElementById(id); };
+  var pin = sessionStorage.getItem('pin') || '';
+  var place = null;   // the city picked from the search
+
+  function api(method, path, body) {
+    return fetch(path + (path.indexOf('?') < 0 ? '?' : '&') + 'pin=' + encodeURIComponent(pin), {
+      method: method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined
+    }).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || r.status); return j; }); });
+  }
+
+  // ---- PIN --------------------------------------------------------------------------------------------
+
+  function start() {
+    api('GET', '/api/state').then(function (j) {
+      sessionStorage.setItem('pin', pin);
+      $('pinBox').hidden = true;
+      $('app').hidden = false;
+      show(j.state || {});
+    }).catch(function (e) { $('pinErr').textContent = e.message; });
+  }
+  $('go').onclick = function () { pin = $('pin').value.trim(); start(); };
+  $('pin').onkeydown = function (e) { if (e.key === 'Enter') $('go').click(); };
+  if (pin) start();
+
+  function show(s) {
+    $('who').textContent = 'Đang cài cho: ' + (s.familyName || 'TV') + (s.version ? ' · bản ' + s.version : '');
+    $('name').value = s.familyName || '';
+    $('cityNow').textContent = s.location ? 'Đang dùng: ' + s.location.name : '';
+    $('photoNow').textContent = 'Trên TV đang có ' + (s.photos || 0) + ' ảnh gia đình' + (s.avatar ? ' và ảnh avatar riêng.' : '.');
+    $('bdays').innerHTML = '';
+    (s.birthdays || []).forEach(addBday);
+  }
+
+  $('heart').onclick = function () { var n = $('name'); n.value = (n.value.trim() + ' ❤ ').replace(/\s+/g, ' '); n.focus(); };
+
+  // ---- city search (Open-Meteo geocoding, straight from this browser) ----------------------------------
+
+  var searchTimer = null;
+  $('city').oninput = function () {
+    clearTimeout(searchTimer);
+    var q = this.value.trim();
+    if (q.length < 2) { $('cities').innerHTML = ''; return; }
+    searchTimer = setTimeout(function () {
+      fetch('https://geocoding-api.open-meteo.com/v1/search?count=8&language=vi&format=json&name=' + encodeURIComponent(q))
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          $('cities').innerHTML = '';
+          (j.results || []).forEach(function (c) {
+            var li = document.createElement('li');
+            li.tabIndex = 0;
+            li.textContent = [c.name, c.admin1, c.country].filter(Boolean).join(', ');
+            li.onclick = function () {
+              place = { name: c.name + (c.admin1 && c.admin1 !== c.name ? ', ' + c.admin1 : ''), latitude: c.latitude,
+                longitude: c.longitude, timezone: c.timezone || 'auto' };
+              $('city').value = li.textContent;
+              $('cities').innerHTML = '';
+              $('cityNow').textContent = 'Sẽ dùng: ' + place.name + ' (bấm Lưu)';
+            };
+            $('cities').appendChild(li);
+          });
+        }).catch(function () { $('cities').innerHTML = '<li>Không tìm được, thử lại.</li>'; });
+    }, 350);
+  };
+
+  // ---- birthdays ---------------------------------------------------------------------------------------
+
+  function addBday(b) {
+    b = b || {};
+    var row = document.createElement('div');
+    row.className = 'bday';
+    row.innerHTML = '<input class="n" placeholder="Tên (Bà, Mẹ, Bé An…)"><input class="d" type="number" min="1" max="31" placeholder="Ngày">' +
+      '<input class="m" type="number" min="1" max="12" placeholder="Tháng"><label><input class="l" type="checkbox"> âm lịch</label>' +
+      '<button title="Bỏ">✕</button>';
+    row.querySelector('.n').value = b.name || '';
+    row.querySelector('.d').value = b.day || '';
+    row.querySelector('.m').value = b.month || '';
+    row.querySelector('.l').checked = !!b.lunar;
+    row.querySelector('button').onclick = function () { row.remove(); };
+    $('bdays').appendChild(row);
+  }
+  $('addBday').onclick = function () { addBday(); };
+
+  function birthdays() {
+    return Array.prototype.map.call(document.querySelectorAll('.bday'), function (r) {
+      return { name: r.querySelector('.n').value.trim(), day: +r.querySelector('.d').value, month: +r.querySelector('.m').value,
+        lunar: r.querySelector('.l').checked };
+    }).filter(function (b) { return b.name && b.day >= 1 && b.day <= 31 && b.month >= 1 && b.month <= 12; });
+  }
+
+  $('save').onclick = function () {
+    var body = { familyName: $('name').value.trim(), birthdays: birthdays() };
+    if (place) body.location = place;
+    $('saveMsg').className = '';
+    $('saveMsg').textContent = 'Đang gửi…';
+    api('POST', '/api/profile', body).then(function () {
+      $('saveMsg').className = 'ok';
+      $('saveMsg').textContent = 'Đã gửi. TV cập nhật sau vài giây.';
+    }).catch(function (e) { $('saveMsg').className = 'err'; $('saveMsg').textContent = e.message; });
+  };
+
+  // ---- photos: resized here, like tools/photos.py ------------------------------------------------------
+
+  function loadImage(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () { resolve(img); };
+      img.onerror = function () { reject(new Error('Không đọc được ảnh ' + file.name)); };
+      img.src = url;
+    });
+  }
+
+  function cover(ctx, img, anchorY) {
+    var s = Math.max(W / img.naturalWidth, H / img.naturalHeight), w = img.naturalWidth * s, h = img.naturalHeight * s;
+    ctx.drawImage(img, (W - w) / 2, -Math.max(0, Math.min(h - H, (h - H) * anchorY)), w, h);
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+
+  /** Wide photos fill the frame; tall or square ones sit framed on a blurred copy of themselves. */
+  function frame(img) {
+    var c = document.createElement('canvas'), ctx = c.getContext('2d');
+    c.width = W; c.height = H;
+    if (img.naturalWidth / img.naturalHeight >= 1.6) {
+      cover(ctx, img, 0.42);
+    } else {
+      // Blur by drawing small and scaling up (Safari has no canvas filter), then darken.
+      var t = document.createElement('canvas'), tc = t.getContext('2d');
+      t.width = 48; t.height = 27;
+      tc.drawImage(img, 0, 0, 48, 27);
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(t, 0, 0, W, H);
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(0, 0, W, H);
+      var ph = H - 110, pw = Math.round(img.naturalWidth * ph / img.naturalHeight), x0 = (W - pw) / 2, y0 = 55;
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 56; ctx.shadowOffsetX = 8; ctx.shadowOffsetY = 22;
+      roundRect(ctx, x0, y0, pw, ph, 34);
+      ctx.fillStyle = '#000';
+      ctx.fill();
+      ctx.restore();
+      ctx.save();
+      roundRect(ctx, x0, y0, pw, ph, 34);
+      ctx.clip();
+      ctx.drawImage(img, x0, y0, pw, ph);
+      ctx.restore();
+    }
+    return c.toDataURL('image/jpeg', 0.86);
+  }
+
+  function square(img) {
+    var c = document.createElement('canvas'), s = Math.min(img.naturalWidth, img.naturalHeight);
+    c.width = c.height = 256;
+    c.getContext('2d').drawImage(img, (img.naturalWidth - s) / 2, (img.naturalHeight - s) / 2, s, s, 0, 0, 256, 256);
+    return c.toDataURL('image/jpeg', 0.9);
+  }
+
+  function sendPhotos(files, kind, msg) {
+    var i = 0, sent = 0;
+    function next() {
+      if (i >= files.length) {
+        $(msg).className = sent ? 'ok' : 'err';
+        $(msg).textContent = sent ? 'Đã gửi ' + sent + ' ảnh. TV cập nhật sau vài giây.' : 'Chưa gửi được ảnh nào.';
+        return;
+      }
+      var f = files[i++];
+      $(msg).className = '';
+      $(msg).textContent = 'Đang xử lý và gửi ' + i + '/' + files.length + '…';
+      loadImage(f).then(function (img) {
+        return api('POST', '/api/photo', { kind: kind, data: kind === 'avatar' ? square(img) : frame(img) });
+      }).then(function () { sent++; next(); }).catch(function (e) { $(msg).className = 'err'; $(msg).textContent = e.message; next(); });
+    }
+    next();
+  }
+
+  $('photos').onchange = function () { sendPhotos(Array.prototype.slice.call(this.files), 'family', 'photoMsg'); this.value = ''; };
+  $('avatar').onchange = function () { sendPhotos(Array.prototype.slice.call(this.files, 0, 1), 'avatar', 'avatarMsg'); this.value = ''; };
+  $('clear').onclick = function () {
+    if (!confirm('Xóa hết ảnh gia đình trên TV?')) return;
+    api('POST', '/api/clear-photos', {}).then(function () { $('photoMsg').className = 'ok'; $('photoMsg').textContent = 'Đã gửi lệnh xóa.'; })
+      .catch(function (e) { $('photoMsg').className = 'err'; $('photoMsg').textContent = e.message; });
+  };
+})();
+</script>
+</body>
+</html>

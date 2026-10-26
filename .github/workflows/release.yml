@@ -1,0 +1,47 @@
+# Bản phát hành: đẩy một tag dạng v1.2.0 là GitHub tự đóng gói NhaMinh-<phiên bản>.wgt (bản công khai, không có
+# local/) và gắn vào Release. Người dùng cài file này bằng Apps2Samsung; Apps2Samsung luôn ký lại bằng chứng chỉ
+# của người dùng, nên ở đây ký bằng một chứng chỉ Tizen tạo riêng cho mỗi lần chạy.
+name: Phát hành
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  wgt:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Bộ nhớ đệm Tizen Studio CLI
+        uses: actions/cache@v4
+        with:
+          path: ~/tizen-studio
+          key: tizen-studio-6.1-web-cli-ubuntu
+      - name: Test
+        run: node --test tests/*.test.js
+      - name: Tizen Studio CLI và chứng chỉ ký
+        run: python3 tools/tvdev.py setup --no-venv
+      - name: Đóng gói
+        run: python3 tools/tvdev.py release
+      - name: Gắn vào Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/NhaMinh-*.wgt
+          generate_release_notes: true
+      - name: Lưu file .wgt (chạy tay)
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: NhaMinh-wgt
+          path: dist/NhaMinh-*.wgt

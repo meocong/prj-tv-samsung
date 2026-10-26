@@ -105,6 +105,22 @@
   </div>
 
   <!-- Thư viện hình nền: pick a photo for now, or keep it. -->
+  <!-- Cài đặt bằng điện thoại / máy tính: QR, link and PIN for the page the background service serves. -->
+  <div id="setupPanel" class="hidden">
+    <div class="spHead">Cài đặt bằng điện thoại / máy tính</div>
+    <div class="spBody">
+      <canvas id="spQr" width="360" height="360"></canvas>
+      <div class="spText">
+        <p>Dùng điện thoại hoặc laptop <b>cùng Wi-Fi</b> với TV: quét mã QR, hoặc mở trình duyệt và gõ</p>
+        <div class="spUrl" id="spUrl"></div>
+        <p>rồi nhập mã PIN</p>
+        <div class="spPin" id="spPin"></div>
+        <p class="spGot" id="spGot">Đặt được tên nhà, thành phố, ảnh gia đình, ảnh avatar và sinh nhật.</p>
+      </div>
+    </div>
+    <div class="spHint">Back để đóng · TV tự cập nhật khi nhận được</div>
+  </div>
+
   <div id="gallery" class="hidden">
     <div class="glHead">Chọn hình nền</div><div class="glSub"></div>
     <div class="glViewport"><div id="glGrid"></div></div>
@@ -129,8 +145,11 @@
   <script src="js/history.js"></script>
   <script src="js/quotes.js"></script>
   <script src="js/news.js"></script>
+  <script src="js/markets.js"></script>
   <script src="js/calendar.js"></script>
   <script src="js/shelf.js"></script>
+  <script src="js/vendor/qrcode.js"></script>
+  <script src="js/profile.js"></script>
   <script>performance.mark('home');</script>
   <script src="js/home.js"></script>
   <script>performance.mark('ready');</script>

@@ -13,7 +13,8 @@
  * Dịch vụ có thể bị hệ thống tạm dừng một lúc; khi chạy lại, mọi bộ đếm thời gian được đặt lại để không đưa về
  * màn hình chính nhầm lúc bạn vừa mở app khác.
  *
- * http://<IP TV>:8701/ cho biết dịch vụ chạy từ lúc nào, đang canh app nào và những việc vừa làm (để gỡ lỗi).
+ * http://<IP TV>:8701/ là trang cài đặt bằng điện thoại / máy tính (tên nhà, thành phố, ảnh gia đình, sinh nhật);
+ * http://<IP TV>:8701/status cho biết dịch vụ chạy từ lúc nào, đang canh app nào và những việc vừa làm (để gỡ lỗi).
  * Cùng cơ chế dịch vụ nền với TizenBrew (config.xml: <tizen:service>, feature web.service).
  */
 var http = require('http');
@@ -219,18 +220,111 @@ function clean() {
   });
 }
 
-// ---- status page for debugging: http://<TV>:8701/ -------------------------------------------------
+// ---- web server on port 8701: setup from a phone or laptop, and a status page ---------------------------------
+//
+//   GET  /                      the setup page (sent here by the app on the TV: it is a file of the app)
+//   GET  /status                what the service is doing (for debugging)
+//   GET  /api/state?pin=…       what is set now                          (PIN shown on the TV)
+//   POST /api/profile?pin=…     name, city, birthdays (JSON)             (PIN)
+//   POST /api/photo?pin=…       {kind: 'family'|'avatar', data: 'data:image/jpeg;base64,…'}   (PIN)
+//   POST /api/clear-photos?pin=…                                          (PIN)
+//   /api/local/…                only from the TV itself: page, state and PIN in, the inbox out
+
+var page = '', pin = '', tvState = null, inbox = [], INBOX_MAX = 40, BODY_MAX = 6 * 1048576;
+
+function send(res, code, type, body) {
+  res.writeHead(code, { 'Content-Type': type, 'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type',
+    'Cache-Control': 'no-store' });
+  res.end(body);
+}
+
+function json(res, code, obj) { send(res, code, 'application/json; charset=utf-8', JSON.stringify(obj)); }
+
+function readBody(req, cb) {
+  var chunks = [], size = 0, done = false;
+  req.on('data', function (c) {
+    size += c.length;
+    if (size > BODY_MAX) { done = true; cb(null); try { req.destroy(); } catch (e) { /* closed */ } return; }
+    chunks.push(c);
+  });
+  req.on('end', function () {
+    if (done) return;
+    cb(typeof Buffer !== 'undefined' && chunks.length && typeof chunks[0] !== 'string'
+      ? Buffer.concat(chunks).toString('utf8') : chunks.join(''));
+  });
+  req.on('error', function () { if (!done) { done = true; cb(null); } });
+}
+
+function isLocal(req) {
+  var a = (req.socket && req.socket.remoteAddress) || '';
+  return a === '127.0.0.1' || a === '::1' || a === '::ffff:127.0.0.1';
+}
+
+function query(url, key) {
+  var m = new RegExp('[?&]' + key + '=([^&]*)').exec(url);
+  return m ? decodeURIComponent(m[1]) : '';
+}
+
+function queue(item) {
+  inbox.push(item);
+  if (inbox.length > INBOX_MAX) inbox.shift();
+}
+
+function handle(req, res) {
+  var url = req.url || '/', path = url.split('?')[0], method = req.method;
+  if (method === 'OPTIONS') return send(res, 204, 'text/plain', '');
+  if (method === 'GET' && (path === '/' || path === '/index.html')) {
+    return page ? send(res, 200, 'text/html; charset=utf-8', page)
+      : send(res, 503, 'text/plain; charset=utf-8', 'Mở màn hình chính trên TV một lần rồi tải lại trang này.');
+  }
+  if (method === 'GET' && path === '/status') {
+    return send(res, 200, 'application/json; charset=utf-8', JSON.stringify({
+      since: new Date(started).toString(), power: power, watching: watched ? watched.ids : null,
+      knownApps: known.length, tvUptimeS: tvUptimeS(), closeAfterMin: closeAfter / 60000, inbox: inbox.length, log: log
+    }, null, 1));
+  }
+
+  if (path.indexOf('/api/local/') === 0) {
+    if (!isLocal(req)) return json(res, 403, { error: 'chỉ dành cho TV' });
+    if (path === '/api/local/inbox') { var out = inbox; inbox = []; return json(res, 200, { items: out }); }
+    return readBody(req, function (body) {
+      if (body === null) return json(res, 413, { error: 'quá lớn' });
+      if (path === '/api/local/page') { page = body; return json(res, 200, { ok: true }); }
+      if (path === '/api/local/state') {
+        try { var d = JSON.parse(body); pin = String(d.pin || pin); tvState = d.state || tvState; } catch (e) { return json(res, 400, {}); }
+        return json(res, 200, { ok: true });
+      }
+      json(res, 404, {});
+    });
+  }
+
+  if (path.indexOf('/api/') === 0) {
+    if (!pin || query(url, 'pin') !== pin) return json(res, 401, { error: 'Sai mã PIN. Xem mã trên TV: Cài đặt → Cài đặt bằng điện thoại.' });
+    if (method === 'GET' && path === '/api/state') return json(res, 200, { state: tvState, pending: inbox.length });
+    return readBody(req, function (body) {
+      if (body === null) return json(res, 413, { error: 'Ảnh quá lớn' });
+      var d = null;
+      try { d = body ? JSON.parse(body) : {}; } catch (e) { return json(res, 400, { error: 'Dữ liệu không hợp lệ' }); }
+      if (path === '/api/profile') queue({ type: 'profile', data: d });
+      else if (path === '/api/photo' && /^data:image\/(jpeg|png|webp);base64,/.test(d.data || '')) queue({ type: 'photo', kind: d.kind === 'avatar' ? 'avatar' : 'family', data: d.data });
+      else if (path === '/api/clear-photos') queue({ type: 'clearPhotos' });
+      else return json(res, 400, { error: 'Không hiểu yêu cầu' });
+      note('nhận từ điện thoại: ' + path.slice(5));
+      json(res, 200, { ok: true });
+    });
+  }
+  send(res, 404, 'text/plain', 'not found');
+}
 
 try {
   var server = http.createServer(function (req, res) {
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
-    res.end(JSON.stringify({
-      since: new Date(started).toString(), power: power, watching: watched ? watched.ids : null,
-      knownApps: known.length, tvUptimeS: tvUptimeS(), closeAfterMin: closeAfter / 60000, log: log
-    }, null, 1));
+    try { handle(req, res); } catch (e) { try { json(res, 500, { error: String(e && e.message) }); } catch (x) { /* closed */ } }
   });
-  server.on('error', function () { /* port taken: no status page */ });
-  server.listen(8701);
+  server.on('error', function () { /* port taken: no setup page or status page */ });
+  // NHAMINH_PORT: only for running this file under Node on a computer (tests/service.test.js).
+  server.listen((typeof process !== 'undefined' && process.env && +process.env.NHAMINH_PORT) || 8701);
+  module.exports._server = server;
 } catch (e) { /* no server support */ }
 
 var lastTick = Date.now();

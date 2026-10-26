@@ -109,14 +109,17 @@
     get(url, cb);
   }
 
+  var mine = {};   // blob URLs made here (the family photos' URLs belong to Profile and are kept)
+
   function load(url, cb) {
+    if (/^idb:/.test(url) && root.Profile) return Profile.photoUrl(url, function (u) { cb(u || url, false); });
     if (!isRemote(url)) return cb(url, false);
     cached(url, function (hit) {
-      if (hit) { touch(url, hit); return cb(URL.createObjectURL(hit.blob), true); }
+      if (hit) { touch(url, hit); return cb(own(URL.createObjectURL(hit.blob)), true); }
       download(url, function (blob) {
         if (!blob) return cb(url, false);
         put(url, blob);
-        cb(URL.createObjectURL(blob), true);
+        cb(own(URL.createObjectURL(blob)), true);
       });
     });
   }
@@ -128,7 +131,9 @@
     });
   }
 
-  function done(src) { if (/^blob:/.test(src)) URL.revokeObjectURL(src); }
+  function own(u) { mine[u] = true; return u; }
+
+  function done(src) { if (mine[src]) { delete mine[src]; URL.revokeObjectURL(src); } }
 
   root.ImageCache = { load: load, warm: warm, done: done };
 })(this);

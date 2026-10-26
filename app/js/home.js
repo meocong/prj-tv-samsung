@@ -347,8 +347,7 @@
     if (item.kind === 'news') return 'Tin mới nhất từ VnExpress, Thanh Niên và Dân Trí · OK để đọc';
     if (item.kind === 'game') return item.game.desc || '';
     var a = item.app;
-    var uses = a.uses > 0 ? 'Đã mở ' + a.uses.toLocaleString('vi-VN') + ' lần' : '';
-    return [a.desc, uses].filter(Boolean).join('   ·   ');
+    return a.desc || '';
   }
 
   /** Below the dock the header is gone: the top of the screen names the focused tile, Apple TV style. */
@@ -775,6 +774,7 @@
         onOff('showLunar', 'Âm lịch và ngày lễ', function () { eventsKey = ''; applyVisibility(); renderEvents(); }, ['Hiện', 'Ẩn']),
         onOff('showWeather', 'Thời tiết và AQI', applyVisibility, ['Hiện', 'Ẩn']),
         onOff('showToday', 'Ngày này năm xưa, câu nói, tin mới', showToday, ['Hiện', 'Ẩn']),
+        onOff('showMarkets', 'Giá vàng, tỷ giá', refreshToday, ['Hiện', 'Ẩn']),
         onOff('showStats', 'CPU và bộ nhớ dưới đồng hồ', function () { applyVisibility(); updateStats(); }, ['Hiện', 'Ẩn']),
         { label: 'Sắp xếp ứng dụng như ban đầu', run: function () { S.set(ORDER_KEY, null); closeSettings(); loadApps(); toast('Đã sắp xếp lại'); } }
       ];
@@ -817,7 +817,9 @@
     rows: function () {
       var rows = [];
       function info(label, value) { rows.push({ label: label, value: function () { return value; }, info: true }); }
-      info('Màn hình chính', (C.familyName || '') + ' ' + Platform.version());
+      info('Màn hình chính', (C.familyName || '') + ' · bản ' + Platform.version());
+      var up = S.get('update', null);
+      if (up && up.latest && newer(up.latest, Platform.version())) info('Có bản mới ' + up.latest, 'cài bằng Apps2Samsung (xem README trên GitHub)');
       var d = deviceInfo;
       if (d.model) info('TV', d.model);
       if (d.firmware) info('Phần mềm TV', d.firmware);
@@ -839,6 +841,8 @@
         { label: 'Màn hình chính', open: homePage },
         { label: 'Ứng dụng', open: appsPage, value: function () { return (allApps.length - settings.hiddenApps.length) + ' đang hiện'; } },
         { label: 'Thời tiết', open: weatherPage, value: function () { return currentLocation().name; } },
+        { label: 'Cài đặt bằng điện thoại / máy tính', value: function () { return 'Tên nhà, thành phố, ảnh'; },
+          run: function () { closeSettings(); openSetup(); } },
         { label: 'Thông tin', open: infoPage },
         { label: 'Xem màn hình chờ ngay', run: function () { closeSettings(); enterFrame(); } },
         { label: 'Cài đặt TV', value: function () { return 'Hẹn giờ tắt, hình, tiếng'; }, run: function () {
@@ -948,12 +952,13 @@
 
   // ---- "Hôm nay" block: on this day · a saying · the latest news, rotating every 15 s ------------
 
-  var todayItems = [], todayIndex = 0, history = [], news = [];
+  var todayItems = [], todayIndex = 0, history = [], news = [], markets = null;
 
   function refreshToday() {
     var now = new Date();
     History.load(now, function (items) { history = items; buildToday(); });
     News.load(function (items) { news = items; buildToday(); });
+    if (settings.showMarkets) Markets.load(function (m) { markets = m; buildToday(); });
     Quotes.load();
     buildToday();
   }
@@ -973,11 +978,12 @@
       list.push({ label: 'Sinh ngày này · ' + b.year, text: b.text, meta: '' });
     }
     news.slice(0, 3).forEach(function (n) { list.push({ label: 'Tin mới · ' + n.source, text: n.title, meta: News.ago(n.time) }); });
-    // Interleave so the saying, history and news alternate.
+    // Interleave so the saying, history, news and gold / exchange rate alternate.
     todayItems = [];
     var groups = [list.filter(function (x) { return x.label.indexOf('Câu') === 0; }),
       list.filter(function (x) { return x.label.indexOf('Ngày này') === 0 || x.label.indexOf('Sinh') === 0; }),
-      list.filter(function (x) { return x.label.indexOf('Tin') === 0; })];
+      list.filter(function (x) { return x.label.indexOf('Tin') === 0; }),
+      settings.showMarkets ? Markets.cards(markets) : []];
     for (var k = 0; k < 6; k++) groups.forEach(function (g) { if (g[k]) todayItems.push(g[k]); });
     if (!$('today').classList.contains('shown')) showToday();
   }
@@ -1290,7 +1296,9 @@
     // Thumbnails load as their rows come near: a hundred at once would choke the TV.
     for (var r = Math.max(0, top - 1) * GL_COLS; r < Math.min(els.length, (top + 4) * GL_COLS); r++) {
       var img = els[r].querySelector('img');
-      if (!img.src) img.src = img.getAttribute('data-src');
+      if (img.src || img.getAttribute('data-loading')) continue;
+      img.setAttribute('data-loading', '1');
+      (function (el) { Profile.photoUrl(el.getAttribute('data-src'), function (u) { if (u) el.src = u; }); })(img);
     }
   }
 
@@ -1366,6 +1374,81 @@
     else if (k === 'back') closeGallery();
   }
 
+  // ---- a newer release on GitHub? Asked once a day ------------------------------------------------------------
+
+  /** "1.10.0" is newer than "1.9.2"; anything that is not a version number is not. */
+  function newer(a, b) {
+    var x = String(a).replace(/^v/, '').split('.'), y = String(b).replace(/^v/, '').split('.');
+    for (var i = 0; i < 3; i++) {
+      var d = (parseInt(x[i], 10) || 0) - (parseInt(y[i], 10) || 0);
+      if (d) return d > 0 && !isNaN(parseInt(x[0], 10));
+    }
+    return false;
+  }
+
+  function checkUpdate() {
+    var up = S.get('update', null);
+    if (!C.repo || (up && Date.now() - up.at < 86400000)) return;
+    Platform.getJSON('https://api.github.com/repos/' + C.repo + '/releases/latest', function (err, data) {
+      if (err || !data || !data.tag_name) return;
+      S.set('update', { at: Date.now(), latest: String(data.tag_name).replace(/^v/, '') });
+    });
+  }
+
+  // ---- Cài đặt bằng điện thoại / máy tính ------------------------------------------------------------
+  // The page itself is served by the background service (app/service/setup.html); what the phone sends waits there
+  // until this screen takes it (Profile.sync), then the app reloads to use it everywhere.
+
+  var setupTimer = null, setupReload = false;
+
+  function drawQr(canvas, text) {
+    var qr = qrcode(0, 'M');
+    qr.addData(text);
+    qr.make();
+    var n = qr.getModuleCount(), ctx = canvas.getContext('2d'), cell = Math.floor(canvas.width / (n + 4)),
+      off = Math.floor((canvas.width - cell * n) / 2);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#000';
+    for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (qr.isDark(r, c)) ctx.fillRect(off + c * cell, off + r * cell, cell, cell);
+  }
+
+  function openSetup() {
+    pills.forEach(function (el) { el.classList.remove('focused'); });
+    zone = 'setup';
+    $('spPin').textContent = Profile.pin().replace(/(\d{3})(\d{3})/, '$1 $2');
+    $('spGot').textContent = 'Đặt được tên nhà, thành phố, ảnh gia đình, ảnh avatar và sinh nhật.';
+    $('setupPanel').classList.remove('hidden');
+    Profile.publish();
+    Platform.network(function (n) {
+      var url = 'http://' + (n.ip || '<IP TV>') + ':8701/';
+      $('spUrl').textContent = url;
+      try { drawQr($('spQr'), url); } catch (e) { /* no QR: the link is there */ }
+    });
+    clearInterval(setupTimer);
+    setupTimer = setInterval(syncProfile, 3000);
+  }
+
+  function closeSetup() {
+    clearInterval(setupTimer);
+    $('setupPanel').classList.add('hidden');
+    zone = 'none';
+    if (setupReload) return location.reload();
+    focusTile(focused, true);
+  }
+
+  /** What the phone sent: shown on the setup screen, applied by reloading (now, or when the screen closes). */
+  function syncProfile() {
+    Profile.sync(function (got) {
+      if (!got.length) return;
+      var text = 'Đã nhận: ' + got.filter(function (g, i) { return got.indexOf(g) === i; }).join(', ');
+      setupReload = true;
+      if (zone === 'setup') { $('spGot').textContent = text + '. Back để áp dụng.'; return; }
+      toast(text);
+      setTimeout(function () { if (zone !== 'setup') location.reload(); }, 1800);
+    });
+  }
+
   // For tools/inspect.js: why did (or didn't) the wallpaper change?
   root.NhaMinhDebug = {
     wall: function () {
@@ -1426,7 +1509,7 @@
 
   setInterval(function () {
     var mins = settings.screensaverAfter;
-    if (mins && zone !== 'frame' && zone !== 'calendar' && zone !== 'news' && zone !== 'gallery' && !document.hidden && Date.now() - lastInput > mins * 60000) enterFrame();
+    if (mins && zone !== 'frame' && zone !== 'calendar' && zone !== 'news' && zone !== 'gallery' && zone !== 'setup' && !document.hidden && Date.now() - lastInput > mins * 60000) enterFrame();
   }, 5000);
 
   // ---- rearranging ---------------------------------------------------------------------------
@@ -1490,6 +1573,7 @@
 
     if (zone === 'calendar') { Calendar.key(k); return; }
     if (zone === 'gallery') { galleryKey(k); return; }
+    if (zone === 'setup') { if (k === 'back' || k === 'ok') closeSetup(); return; }
     if (!editing && k === 'green' && (zone === 'grid' || zone === 'top' || zone === 'none')) { unpinQuietly(); nextWallpaper(); return; }
     if (!editing && (k === 'yellow' || k === 'playpause' || k === 'play')) { enterFrame(); return; }
     if (!editing && k === 'blue') { if (zone === 'settings') closeSettings(); else { closePanels(); openSettings(); } return; }
@@ -1596,7 +1680,7 @@
     zone = 'none';
     focusTile(focused, true);
     setTimeout(function () {
-      idle(function () { updateStats(); weatherFeed.refresh(); applyWallpaper(); refreshWallpaperIfDue(); }, { timeout: 3000 });
+      idle(function () { updateStats(); weatherFeed.refresh(); applyWallpaper(); refreshWallpaperIfDue(); syncProfile(); }, { timeout: 3000 });
     }, 600);
   }
 
@@ -1630,4 +1714,7 @@
   loadApps();
   Platform.setTvScreenSaver(true);
   Platform.setServiceOption('closeAfter', settings.closeHidden);   // also starts the service
+  Profile.applyAvatar($('btnFamily'));
+  setTimeout(function () { idle(function () { Profile.publish(); syncProfile(); checkUpdate(); }); }, 4000);
+  setInterval(function () { if (!document.hidden && zone !== 'setup') syncProfile(); }, 20000);
 })(this);
