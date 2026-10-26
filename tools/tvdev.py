@@ -212,6 +212,10 @@ def build(public):
     wgts = [f for f in os.listdir(out)] if os.path.isdir(out) else []
     if r.returncode != 0 or not wgts:
         print((r.stdout or "") + (r.stderr or ""))
+        log = os.path.join(tizen_data(), "cli", "logs", "cli.log")
+        if os.path.exists(log):
+            print("--- cuối " + log + " ---")
+            print("".join(open(log, encoding="utf-8", errors="replace").readlines()[-40:]))
         die("đóng gói không xong (đã chạy tvdev.py setup chưa?)")
     os.makedirs(DIST, exist_ok=True)
     # The package is named after <name> (may have Vietnamese letters); the installer wants a plain file name.
