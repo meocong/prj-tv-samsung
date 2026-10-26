@@ -6,6 +6,7 @@
  *   node tools/inspect.js --port 34163 --watch 8            # in console trong 8 giây
  *   node tools/inspect.js --port 34163 --eval "apps.length"
  *   node tools/inspect.js --port 34163 --keys down,down,ok --shot shot.png
+ *   node tools/inspect.js --port 34163 --await --eval-file job.js --out result.json   # JS from a file, JSON to a file
  *
  * Keys: left right up down ok back red green yellow blue, or a number (keyCode). "wait500" pauses 500 ms.
  */
@@ -69,11 +70,20 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   await send('Runtime.enable');
   await send('Log.enable');
 
-  const evalExpr = opt('eval', null);
+  const evalFile = opt('eval-file', null);
+  const evalExpr = evalFile ? fs.readFileSync(evalFile, 'utf8') : opt('eval', null);
   if (evalExpr) {
-    const r = await send('Runtime.evaluate', { expression: evalExpr, returnByValue: true, awaitPromise: args.includes('--await') }, 20000);
+    const r = await send('Runtime.evaluate', { expression: evalExpr, returnByValue: true, awaitPromise: args.includes('--await') },
+      Number(opt('timeout', 20000)));
     const res = r.result && r.result.result;
-    console.log(res && res.value !== undefined ? JSON.stringify(res.value, null, 2) : JSON.stringify(r.result || r.error));
+    const out = opt('out', null);
+    if (out && res && res.value !== undefined) {
+      fs.writeFileSync(out, JSON.stringify(res.value));
+      console.log('saved: ' + out);
+    } else {
+      console.log(res && res.value !== undefined ? JSON.stringify(res.value, null, 2) : JSON.stringify(r.result || r.error));
+      if (out) process.exitCode = 1;
+    }
   }
 
   const keys = opt('keys', '');
@@ -101,5 +111,5 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     }
   }
   ws.close();
-  process.exit(0);
+  process.exit(process.exitCode || 0);
 })().catch((e) => { console.error(e); process.exit(1); });

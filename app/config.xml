@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" id="http://nhaminh.local/home" version="1.3.1" viewmodes="maximized">
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" id="http://nhaminh.local/home" version="1.4.0" viewmodes="maximized">
     <tizen:application id="NhaMinh000.NhaMinh" package="NhaMinh000" required_version="2.3"/>
     <content src="index.html"/>
     <!-- Opened again while running (the watch service, Smart Hub): resume the page instead of reloading it. -->
@@ -21,7 +21,7 @@
     <tizen:privilege name="http://tizen.org/privilege/filesystem.read"/>
     <tizen:privilege name="http://developer.samsung.com/privilege/network.public"/>
     <!-- Background service: brings the home screen back when an app opened from it is closed. -->
-    <tizen:service id="NhaMinh000.WatchService">
+    <tizen:service id="NhaMinh000.WatchService" on-boot="true" auto-restart="true">
         <tizen:content src="service/watch.js"/>
         <tizen:name>NhaWatch</tizen:name>
         <tizen:description>Quay về màn hình chính khi thoát app</tizen:description>

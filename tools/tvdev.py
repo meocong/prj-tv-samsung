@@ -10,10 +10,15 @@ Người dùng bình thường không cần file này: cài bản có sẵn bằ
     python3 tools/tvdev.py debug --tv <IP TV>    # mở app ở chế độ debug, chuyển cổng về máy này (cho inspect.js)
     python3 tools/tvdev.py release               # đóng gói bản công khai (không có local/) vào dist/
     python3 tools/tvdev.py install --tv <IP TV> app.wgt   # ký lại một file .wgt bất kỳ (vd. TizenTube) và cài lên TV
+    python3 tools/tvdev.py backup --tv <IP TV>   # chép dữ liệu của app trên TV (cài đặt, ảnh từ điện thoại, từ đã học)
+    python3 tools/tvdev.py restore --tv <IP TV> local/backup/….json   # trả lại sau khi gỡ và cài lại app
+    python3 tools/tvdev.py partner --tv <IP TV>  # ký bằng chứng chỉ Partner của Apps2Samsung (để TV khởi động hẳn
+                                                 # vẫn mở màn hình chính); chuyển app đang cài sang chứng chỉ đó
 
 Trên Windows thay python3 bằng py. IP của TV có thể đặt sẵn bằng biến môi trường TV_HOST.
 """
 import argparse
+import json
 import os
 import platform
 import re
@@ -22,6 +27,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -29,7 +35,8 @@ APP = os.path.join(ROOT, "app")
 LOCAL = os.path.join(ROOT, "local")
 DIST = os.path.join(ROOT, "dist")
 APP_ID = "NhaMinh000.NhaMinh"
-PROFILE = os.environ.get("TIZEN_PROFILE", "nhaminh")
+PROFILE = "nhaminh"                 # the profile tvdev.py setup makes (Tizen certificate, Public level)
+PARTNER_PROFILE = "apps2samsung-partner"   # Apps2Samsung's Samsung Partner certificate, after tvdev.py partner
 WINDOWS = os.name == "nt"
 INSTALLER = "https://download.tizen.org/sdk/Installer/tizen-studio_6.1/web-cli_Tizen_Studio_6.1_%s"
 
@@ -198,7 +205,7 @@ def setup(args):
 DISTRIBUTOR_PASSWORD = "tizenpkcs12passfordsigner"   # the public password of Tizen's own distributor certificate
 
 
-def fix_linux_passwords(profiles, password):
+def fix_linux_passwords(profiles, password, distributor_password=None):
     """Without a desktop keyring (Linux servers, CI) the CLI keeps no .pwd files and signing fails with "Invalid
     password": write the passwords into profiles.xml itself, as the Tizen Docker images do."""
     if platform.system() != "Linux" or not os.path.exists(profiles):   # macOS and Windows keep them in their keychain
@@ -209,7 +216,8 @@ def fix_linux_passwords(profiles, password):
         key, pwd = m.group(1), m.group(2)
         if not pwd.endswith(".pwd") or os.path.exists(pwd):
             return m.group(0)
-        return m.group(0).replace('password="%s"' % pwd, 'password="%s"' % (DISTRIBUTOR_PASSWORD if "distributor" in key else password))
+        dist = distributor_password or DISTRIBUTOR_PASSWORD
+        return m.group(0).replace('password="%s"' % pwd, 'password="%s"' % (dist if "distributor" in key else password))
 
     fixed = re.sub(r'<profileitem[^>]*key="([^"]*)"[^>]*password="([^"]*)"[^>]*/>', repl, s)
     if fixed != s:
@@ -282,13 +290,22 @@ def build(public):
     return dest
 
 
+def signing_profile():
+    """TIZEN_PROFILE if set, else the one tvdev.py partner chose (kept in <data>/nhaminh.profile), else ours."""
+    if os.environ.get("TIZEN_PROFILE"):
+        return os.environ["TIZEN_PROFILE"]
+    chosen = os.path.join(tizen_data(), "nhaminh.profile")
+    return open(chosen).read().strip() if os.path.exists(chosen) else PROFILE
+
+
 def sign(src, dest):
     """Package and sign the folder src with our certificate into dest (a .wgt)."""
     need_tizen()
     tmp = tempfile.mkdtemp()
     out = os.path.join(tmp, "out")
-    cmd = [tizen_bin(), "package", "-t", "wgt", "-s", PROFILE, "-o", out, "--", src]
-    pass_file = os.path.join(tizen_data(), PROFILE + ".pass")
+    profile = signing_profile()
+    cmd = [tizen_bin(), "package", "-t", "wgt", "-s", profile, "-o", out, "--", src]
+    pass_file = os.path.join(tizen_data(), profile + ".pass")
     if platform.system() == "Linux" and os.path.exists(pass_file):
         # Without a keyring the CLI asks for the password on a terminal (and whether to save it).
         password = open(pass_file).read().strip()
@@ -382,6 +399,111 @@ def debug(args):
     print("App đang ở chế độ debug. Dùng: node tools/inspect.js --port 9333 --eval \"NhaMinhDebug.wall()\"")
 
 
+def normal(target):
+    """Back from debug mode: the app as it runs every day, without the port forward."""
+    run([sdb_bin(), "-s", target, "forward", "--remove", "tcp:9333"], check=False, capture=True)
+    run([sdb_bin(), "-s", target, "shell", "0", "was_kill", APP_ID], check=False, capture=True)
+    run([sdb_bin(), "-s", target, "shell", "0", "execute", APP_ID], check=False, capture=True)
+
+
+def in_app(args, script, out=None, data=None):
+    """Run tools/tvdata/<script> inside the app on the TV (debug mode for a moment); the JSON result goes to out."""
+    target = tv_target(args)
+    debug(args)
+    time.sleep(8)   # the app's own start-up first
+    src = open(os.path.join(ROOT, "tools", "tvdata", script), encoding="utf-8").read()
+    if data is not None:
+        src = src.replace("(DATA)", "(" + data + ")")
+    job = os.path.join(tempfile.mkdtemp(), script)
+    open(job, "w", encoding="utf-8").write(src)
+    cmd = ["node", os.path.join(ROOT, "tools", "inspect.js"), "--port", "9333", "--await", "--timeout", "120000", "--eval-file", job]
+    r = run(cmd + (["--out", out] if out else []), check=False, capture=True)
+    normal(target)
+    if r.returncode != 0:
+        print((r.stdout or "") + (r.stderr or ""))
+        die("không chạy được trong app trên TV")
+    return r.stdout or ""
+
+
+def backup(args):
+    out = args.out or os.path.join(LOCAL, "backup", "tv-data-%s.json" % time.strftime("%Y%m%d-%H%M"))
+    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    in_app(args, "backup.js", out=out)
+    d = json.load(open(out, encoding="utf-8"))
+    print("Đã sao lưu vào %s: %d mục cài đặt, %d mục dữ liệu, %d ảnh (bản %s)"
+          % (os.path.relpath(out, ROOT), len(d["localStorage"]), len(d["kv"]), len(d["photos"]), d.get("version")))
+
+
+def restore(args):
+    d = json.load(open(args.file, encoding="utf-8"))
+    if d.get("app") != "NhaMinh":
+        die("không phải file sao lưu của màn hình chính")
+    print(in_app(args, "restore.js", data=json.dumps(d)).strip())
+    print("Đã trả lại dữ liệu từ " + args.file)
+
+
+def apps2samsung_dir():
+    """Apps2Samsung's data folder (desktop app and apps2samsung-cli share it)."""
+    if os.environ.get("APPS2SAMSUNG_DATA_DIR"):
+        return os.environ["APPS2SAMSUNG_DATA_DIR"]
+    if WINDOWS:
+        base = os.environ.get("APPDATA", os.path.expanduser("~"))
+    elif platform.system() == "Darwin":
+        base = os.path.expanduser("~/Library/Application Support")
+    else:
+        base = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
+    return os.path.join(base, "Apps2Samsung")
+
+
+def partner(args):
+    """Sign with Apps2Samsung's Partner certificate from now on; with --tv, move the installed app over to it.
+
+    Tizen honours on-boot="true" (the service starts when the TV boots, and brings the home screen up) only for
+    Partner-signed apps. The certificate is Samsung's, made once by Apps2Samsung after a Samsung account sign-in:
+    apps2samsung-cli cert --tv <IP TV> --partner --prepare. A TV refuses an update signed by another certificate, so
+    moving over means backup → uninstall → install → restore.
+    """
+    need_tizen()
+    d = os.path.join(apps2samsung_dir(), "Certificate", "Jelly2Sams - Partner")
+    author, dist, pw = (os.path.join(d, n) for n in ("author.p12", "distributor.p12", "password.txt"))
+    if not all(os.path.exists(f) for f in (author, dist, pw)):
+        die("chưa có chứng chỉ Partner của Apps2Samsung ở " + d + ". Tạo bằng: apps2samsung-cli cert --tv <IP TV> "
+            "--partner --prepare (đăng nhập tài khoản Samsung), hoặc cài một app bất kỳ bằng Apps2Samsung với Partner Signing.")
+    password = open(pw).read().strip()
+    run([tizen_bin(), "security-profiles", "remove", "-n", PARTNER_PROFILE], check=False, capture=True)
+    r = run([tizen_bin(), "security-profiles", "add", "-n", PARTNER_PROFILE, "-a", author, "-p", password, "-d", dist,
+             "-dp", password], check=False, capture=True)
+    if r.returncode != 0:
+        print((r.stdout or "") + (r.stderr or ""))
+        die("không thêm được security profile " + PARTNER_PROFILE)
+    fix_linux_passwords(os.path.join(tizen_data(), "profile", "profiles.xml"), password, password)
+    pass_file = os.path.join(tizen_data(), PARTNER_PROFILE + ".pass")
+    with open(pass_file, "w") as f:
+        f.write(password)
+    os.chmod(pass_file, 0o600)
+    with open(os.path.join(tizen_data(), "nhaminh.profile"), "w") as f:
+        f.write(PARTNER_PROFILE)
+    say("Từ giờ tvdev.py ký bằng chứng chỉ Partner (%s). Quay về chứng chỉ thường: xóa %s"
+        % (PARTNER_PROFILE, os.path.join(tizen_data(), "nhaminh.profile")))
+    if not args.tv and not os.environ.get("TV_HOST"):
+        return
+    target = tv_target(args)
+    connect(target)
+    say("Sao lưu dữ liệu của app trên TV")
+    out = os.path.join(LOCAL, "backup", "tv-data-%s.json" % time.strftime("%Y%m%d-%H%M"))
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    in_app(args, "backup.js", out=out)
+    say("Gỡ app (chứng chỉ cũ) rồi cài bản ký Partner")
+    run([tizen_bin(), "uninstall", "-p", APP_ID, "-s", target], check=False, capture=True)   # the TV wants the app id here
+    check()
+    install_wgt(build(public=False), target)
+    run([tizen_bin(), "run", "-p", APP_ID, "-s", target], check=False)
+    time.sleep(6)
+    say("Trả lại dữ liệu")
+    in_app(args, "restore.js", data=open(out, encoding="utf-8").read())
+    say("Xong. Bản sao lưu: " + os.path.relpath(out, ROOT))
+
+
 def release(_args):
     check()
     wgt = build(public=True)
@@ -401,12 +523,21 @@ def main():
     p = sub.add_parser("debug", help="mở app ở chế độ debug")
     p.add_argument("--tv", help="IP của TV (hoặc biến TV_HOST)")
     sub.add_parser("release", help="đóng gói bản công khai vào dist/")
+    p = sub.add_parser("backup", help="chép dữ liệu của app trên TV về máy (local/backup/)")
+    p.add_argument("--tv", help="IP của TV (hoặc biến TV_HOST)")
+    p.add_argument("--out", help="file JSON (mặc định local/backup/tv-data-<giờ>.json)")
+    p = sub.add_parser("restore", help="trả dữ liệu đã sao lưu lại cho app trên TV")
+    p.add_argument("file", help="file JSON do lệnh backup tạo")
+    p.add_argument("--tv", help="IP của TV (hoặc biến TV_HOST)")
+    p = sub.add_parser("partner", help="ký bằng chứng chỉ Partner của Apps2Samsung; --tv: chuyển app trên TV sang")
+    p.add_argument("--tv", help="IP của TV (hoặc biến TV_HOST)")
     p = sub.add_parser("install", help="ký lại một file .wgt khác (vd. TizenTube) và cài lên TV")
     p.add_argument("wgt", help="file .wgt")
     p.add_argument("--tv", help="IP của TV (hoặc biến TV_HOST)")
     p.add_argument("--no-run", action="store_true", help="cài nhưng không mở app")
     args = ap.parse_args()
-    {"setup": setup, "check": check, "deploy": deploy, "debug": debug, "release": release, "install": install}[args.cmd](args)
+    {"setup": setup, "check": check, "deploy": deploy, "debug": debug, "release": release, "install": install,
+     "backup": backup, "restore": restore, "partner": partner}[args.cmd](args)
 
 
 if __name__ == "__main__":

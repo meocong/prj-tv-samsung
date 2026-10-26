@@ -5,6 +5,21 @@
   <title>2048</title>
 
   <link href="style/main.css" rel="stylesheet" type="text/css">
+  <style>
+    /* On the TV: score and buttons on the left, the board on the right, all scaled to the screen by ../tv.js (data-fit).
+       The how-to and notes below the board would sit off screen: they go. */
+    html, body { height: 100%; overflow: hidden; }
+    body { margin: 0; }
+    .container { display: grid; grid-template-columns: 330px 500px; grid-column-gap: 40px; width: 870px; margin: 0; }
+    .heading { grid-column: 1; grid-row: 1; }
+    .heading .title { float: none; }
+    .scores-container { float: none; text-align: left; margin-top: 10px; }
+    .above-game { grid-column: 1; grid-row: 2; margin-top: 30px; }
+    .game-intro { float: none; line-height: 1.5; margin-bottom: 20px; }
+    .restart-button { float: none; display: inline-block; }
+    .game-container { grid-column: 2; grid-row: 1 / span 3; margin-top: 0; }
+    .game-explanation, .container > hr, .container > p:not(.game-intro) { display: none; }
+  </style>
   <link rel="shortcut icon" href="favicon.ico"> <!-- iPhone 5+ --> <!-- iPhone, retina -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -92,6 +107,6 @@
   <script src="js/local_storage_manager.js"></script>
   <script src="js/game_manager.js"></script>
   <script src="js/application.js"></script>
-<script src="../tv.js" data-zoom="1.7"></script>
+<script src="../tv.js" data-fit=".container"></script>
 </body>
 </html>

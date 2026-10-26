@@ -14,7 +14,7 @@ window.CONFIG = {
 
   // Dock (hàng trên cùng): mỗi mục khớp app đầu tiên có tên (không dấu) chứa chuỗi `match`, hoặc đúng `id`.
   // `title` đổi tên hiển thị, `skipIf` bỏ qua mục khi có app khác. App chưa cài thì bỏ qua.
-  // YouTube gốc (có YouTube Premium thì không quảng cáo); TizenBrew (TizenTube) nằm cuối danh sách.
+  // YouTube gốc. TizenTube (YouTube không quảng cáo, nếu cài thêm) là một ô riêng ở các hàng dưới.
   dock: [
     { match: ['vtvgo'], id: 'OxWOiJOOyr.vtv' },      // VTVgo Truyền hình số Quốc gia (bản mới); đứng đầu nên không
     { match: ['youtube'], id: '9Ur5IzDKqV.TizenYouTube' },   // có hàng video che Hôm nay và thời tiết lúc mở TV

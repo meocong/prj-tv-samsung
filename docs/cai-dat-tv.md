@@ -40,14 +40,17 @@ Trên thanh Home của Samsung: chọn ô của app (mặc định **Nhà Mình*
 
 Màn hình chính tự lên như sau:
 
-- **Bấm nút nguồn tắt rồi bật lại** (TV chỉ ngủ): dịch vụ nền của app vẫn chạy, thấy TV vừa bật là đưa màn hình chính
-  lên trong vài giây. Bạn mở app nào ngay sau đó thì dịch vụ để yên.
-- **TV khởi động lại hẳn** (rút điện, mất điện, TV tự tắt hẳn sau nhiều giờ): Samsung không cho app tự cài chạy khi TV
-  khởi động, và "Tự động chạy ứng dụng cuối cùng" chỉ áp dụng cho app Samsung cho phép. TV sẽ mở Smart Hub hoặc app cuối
-  cùng; mở ô màn hình chính một lần là dịch vụ nền chạy lại.
-- **Nhà có một thiết bị luôn bật** cùng mạng (điện thoại Android cũ, Raspberry Pi, NAS, máy tính bàn): chạy
-  [`tools/autostart.py`](../tools/autostart.py). Nó hỏi TV vài giây một lần và mở màn hình chính ngay khi TV bật, kể cả
-  sau khi TV khởi động lại hẳn. Chỉ cần Python 3:
+- **Bấm nút nguồn tắt rồi bật lại** (TV chỉ ngủ): dịch vụ nền của app vẫn chạy. Lúc TV sắp tắt, nó đặt màn hình chính ở
+  trước; lúc TV bật, nó giữ màn hình chính ở trước trong 20 giây đầu (Smart Hub hay app cuối cùng có thể lên muộn). Bạn
+  mở app nào từ màn hình chính thì dịch vụ để yên ngay.
+- **TV khởi động lại hẳn** (rút điện, mất điện, TV tự tắt hẳn sau nhiều giờ): TV tự chạy dịch vụ nền lúc khởi động, và
+  dịch vụ đưa màn hình chính lên (canh gần 1 phút). Việc này cần app được ký cấp **Partner**: cài bằng Apps2Samsung thì
+  có sẵn (nó tự ký cấp này), cài bằng `tvdev.py` thì chạy `tvdev.py partner` một lần (xem
+  [hướng dẫn cài đặt](huong-dan-cai-dat.md#cho-người-muốn-sửa-code)). Đã thử trên TV đời 2020.
+- **Bản tự ký bằng chứng chỉ thường** (không Partner): TV không chạy dịch vụ lúc khởi động hẳn, nên TV mở Smart Hub hay
+  app cuối cùng; mở ô màn hình chính một lần là dịch vụ chạy lại. Nếu nhà có một thiết bị luôn bật cùng mạng (điện thoại
+  Android cũ, Raspberry Pi, NAS, máy tính bàn), chạy [`tools/autostart.py`](../tools/autostart.py) trên đó: nó hỏi TV vài
+  giây một lần và mở màn hình chính ngay khi TV bật. Chỉ cần Python 3:
 
   ```bash
   python3 autostart.py --tv <IP TV>            # chạy mãi
@@ -59,6 +62,8 @@ Màn hình chính tự lên như sau:
     tối ưu pin cho Termux.
   - *Raspberry Pi / Linux*: một dịch vụ systemd chạy `python3 /home/pi/autostart.py --tv <IP TV>` với `Restart=always`.
   - *Máy tính*: chạy khi đăng nhập (Task Scheduler trên Windows, launchd trên macOS); chỉ có tác dụng lúc máy không ngủ.
+
+Xem dịch vụ nền đã làm gì (lần TV bật gần nhất, từng lần kiểm tra): `http://<IP TV>:8701/status` trên máy cùng mạng.
 
 ## 3. Chặn quảng cáo, theo dõi bằng DNS
 

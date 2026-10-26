@@ -176,25 +176,33 @@ function checkPower() {
  * service was paused in between) is dropped too.
  */
 var wakeAt = 0;
-function bringHome(why) {
-  var at = wakeAt = Date.now();
-  [1500, 4000, 8000, 15000].forEach(function (ms) {
+var WAKE_TRIES = [1500, 4000, 8000, 12000, 16000, 20000];
+// A cold boot: the TV's own UI, Smart Hub and its "last app" keep coming up for longer than after a wake-up.
+var BOOT_TRIES = [3000, 8000, 15000, 25000, 40000, 55000], BOOT_S = 180;
+var WAKE_LAUNCHES = 3;   // at most this many launches per wake-up: never a fight with the TV
+
+/**
+ * Right after the TV comes on: the home screen goes in front and is kept there for a short while, because the TV may
+ * still bring up Smart Hub, its last app or the TV picture a few seconds later. Each check notes what it saw (the
+ * line lands in /status) and launches the home screen when it is not in front. Opening an app from the home screen
+ * ends this at once (readRequest: 'launched'), and so does a pause of the service (tick: stale checks are dropped).
+ */
+function bringHome(why, tries) {
+  var at = wakeAt = Date.now(), seen = [], launches = 0;
+  tries = tries || WAKE_TRIES;
+  var until = tries[tries.length - 1] + 10000;
+  tries.forEach(function (ms, i) {
     setTimeout(function () {
-      if (power !== 'on' || wakeAt !== at || Date.now() - at > 25000) return;
+      if (power !== 'on' || wakeAt !== at || Date.now() - at > until) return;
       status(HOME, function (me) {
         if (wakeAt !== at) return;
-        if (me && me.visible) { wakeAt = 0; return; }   // made it: leave the screen to the user
-        launchHome(why);
+        var visible = !!(me && me.visible);
+        seen.push(Math.round(ms / 1000) + 's ' + (visible ? 'hiện' : 'khuất'));
+        if (!visible && launches < WAKE_LAUNCHES) { launches++; launchHome(why); }
+        if (i === tries.length - 1) { note(why + ', kiểm tra: ' + seen.join(' · ')); wakeAt = 0; }
       });
     }, ms);
   });
-}
-
-/** While bringing the home screen up: the moment it is on screen, the job is done. */
-function wakeDone() {
-  if (!wakeAt) return;
-  var at = wakeAt;
-  status(HOME, function (me) { if (me && me.visible && wakeAt === at) wakeAt = 0; });
 }
 
 // ---- apps left running in the background: close them after a while to free the TV's memory ---------
@@ -348,7 +356,6 @@ function tick() {
     wakeAt = 0;
   }
   lastTick = now;
-  wakeDone();
   checkPower();
   if (power === 'on') clean();
   if (!watched) return guard();
@@ -376,6 +383,7 @@ function tick() {
   });
 }
 
+/** Takes what the home screen sent with this start; returns how many items there were (0: the TV started us). */
 function readRequest() {
   try {
     var req = tizen.application.getCurrentApplication().getRequestedAppControl();
@@ -394,12 +402,17 @@ function readRequest() {
         watched = null;
       }
     });
-  } catch (e) { /* started without data */ }
+    return data.length;
+  } catch (e) { return 0; }   // started without data
 }
 
 module.exports.onStart = function () {
-  note('dịch vụ bắt đầu (TV đã chạy ' + tvUptimeS() + ' giây)');
-  readRequest();
+  var up = tvUptimeS();
+  note('dịch vụ bắt đầu (TV đã chạy ' + up + ' giây)');
+  var sent = readRequest();
+  // Started by the TV itself right after it booted (on-boot="true", honoured for Partner-signed installs): no app is
+  // on screen that the user chose yet, so the home screen goes up — the cold-boot case Samsung keeps for its own apps.
+  if (!sent && up !== null && up < BOOT_S) bringHome('TV vừa khởi động', BOOT_TRIES);
   if (!timer) timer = setInterval(tick, POLL_MS);
 };
 

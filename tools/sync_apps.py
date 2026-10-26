@@ -63,7 +63,7 @@ ICONS = [
 ]
 # One line shown under the app's name when it is focused (Apple TV's top shelf, in words).
 DESCRIPTIONS = [
-    (r"^youtube", "Video, âm nhạc và kênh yêu thích · YouTube Premium không quảng cáo"),
+    (r"^youtube", "Video, âm nhạc và kênh yêu thích"),
     (r"netflix", "Phim, series và chương trình độc quyền"),
     (r"prime video", "Phim và series Amazon Originals"),
     (r"^internet", "Trình duyệt web của Samsung"),

@@ -3,6 +3,7 @@
  * Thêm vào cuối <body> của game:
  *
  *   <script src="../tv.js" data-ok="32" data-zoom="1.5"></script>
+ *   <script src="../tv.js" data-fit=".container"></script>   # scale that element to fill the screen instead
  *
  *   Back (remote)          → về màn hình chính
  *   OK                     → phím data-ok (vd. 32 = Space) cho game cần phím khác Enter
@@ -17,10 +18,29 @@
   var script = document.currentScript;
   var OK_AS = Number(script && script.getAttribute('data-ok')) || 0;
   var ZOOM = script && script.getAttribute('data-zoom');
+  var FIT = script && script.getAttribute('data-fit');
   var BACK = 10009, ENTER = 13, ESC = 27;
 
   if (ZOOM) document.body.style.zoom = ZOOM;
   document.body.style.cursor = 'none';
+
+  // data-fit: scale one element (with transform, which keeps absolutely placed pieces such as 2048's tiles where they
+  // belong; zoom does not) as large as the 1920×1080 screen allows, centred.
+  function fit() {
+    var el = FIT && document.querySelector(FIT);
+    if (!el) return;
+    el.style.transform = 'none';
+    var r = el.getBoundingClientRect(), W = window.innerWidth, H = window.innerHeight;
+    var s = Math.min(W * 0.94 / r.width, H * 0.92 / r.height);
+    el.style.transformOrigin = '0 0';
+    el.style.transform = 'translate(' + Math.round((W - r.width * s) / 2 - r.left) + 'px,' + Math.round((H - r.height * s) / 2 - r.top) +
+      'px) scale(' + s.toFixed(3) + ')';
+  }
+  if (FIT) {
+    fit();
+    window.addEventListener('load', fit);
+    window.addEventListener('resize', fit);
+  }
 
   // The home screen's language (Cài đặt → Ngôn ngữ), as js/i18n.js works it out.
   try {

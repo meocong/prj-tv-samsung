@@ -5,7 +5,7 @@ window.TV_APPS = [
     "storeId": "111299001912",
     "title": "YouTube",
     "uses": 2331,
-    "desc": "Video, âm nhạc và kênh yêu thích · YouTube Premium không quảng cáo",
+    "desc": "Video, âm nhạc và kênh yêu thích",
     "icon": "icons/111299001912.jpg"
   },
   {

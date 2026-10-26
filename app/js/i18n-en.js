@@ -340,7 +340,7 @@ window.I18N_EN = {
   'Trò chơi · ◀ ▶ di chuyển thanh đỡ, OK để phóng bóng': 'Game · ◀ ▶ move the paddle, OK to launch the ball',
 
   // ---- app descriptions (apps.js) ----
-  'Video, âm nhạc và kênh yêu thích · YouTube Premium không quảng cáo': 'Videos, music and your channels · no ads with YouTube Premium',
+  'Video, âm nhạc và kênh yêu thích': 'Videos, music and your channels',
   'Phim, series và chương trình độc quyền': 'Films, series and originals',
   'Phim và series Amazon Originals': 'Films and Amazon Originals',
   'Trình duyệt web của Samsung': "Samsung's web browser",
